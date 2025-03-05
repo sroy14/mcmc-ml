@@ -30,14 +30,12 @@ include $(UTKNA_MAKEFILE)
 
 # UTK configuration
 
-LIBS = $(UTKNA_O2SCL_LIBS) $(UTKNA_PYTHON_LDFLAGS)
-
-LCXX = $(UTKNA_CXX) 
+LIBS = $(UTKNA_O2SCL_LIBS)
+INCS = $(UTKNA_O2SCL_INCS)
+LCXX = $(UTKNA_CXX)
 LMPI_CXX = $(UTKNA_MPI_CXX)
-LCFLAGS = $(UTKNA_O2SCL_INCS) $(UTKNA_CFLAGS) -DNO_MPI \
-        $(UTKNA_OPENMP_FLAGS)
-LMPI_CFLAGS = $(UTKNA_O2SCL_INCS) $(UTKNA_CFLAGS) \
-	$(UTKNA_OPENMP_FLAGS) $(UTKNA_MPI_CFLAGS)
+LCFLAGS = $(UTKNA_CFLAGS) $(INCS)
+LMPI_CFLAGS = $(UTKNA_MPI_CFLAGS) $(UTKNA_OPENMP_FLAGS) $(INCS)
 
 endif
 
@@ -47,40 +45,36 @@ endif
 # Object files - openmp no mpi
 # ----------------------------------------------------------------
 ex_mcmc.o: ex_mcmc.cpp  
-	$(LCXX) $(LCFLAGS_OMP) -o ex_mcmc.o -c ex_mcmc.cpp 
+	$(LCXX) $(LCFLAGS) -o ex_mcmc.o -c ex_mcmc.cpp 
 
 ex_mcmc_kde.o: ex_mcmc_kde.cpp  
-	$(LCXX) $(LCFLAGS_OMP) -o ex_mcmc_kde.o -c ex_mcmc_kde.cpp 
+	$(LCXX) $(LCFLAGS) -o ex_mcmc_kde.o -c ex_mcmc_kde.cpp 
 
 ex_mcmc_new.o: ex_mcmc_new.cpp  
-	$(LCXX) $(LCFLAGS_OMP) -o ex_mcmc_new.o -c ex_mcmc_new.cpp 
+	$(LCXX) $(LCFLAGS) -o ex_mcmc_new.o -c ex_mcmc_new.cpp 
 
 ex_mcmc_nn.o: ex_mcmc_nn.cpp  
-	$(LCXX) $(LCFLAGS_OMP) -o ex_mcmc_nn.o -c ex_mcmc_nn.cpp 
+	$(LCXX) $(LCFLAGS) -o ex_mcmc_nn.o -c ex_mcmc_nn.cpp 
 
 # ----------------------------------------------------------------
 # Executables - openmp no mpi
 # ----------------------------------------------------------------
 
 ex_mcmc: ex_mcmc.o 
-	$(LCXX) $(LCFLAGS_OMP) -o ex_mcmc ex_mcmc.o \
-	$(LIBS)
+	$(LCXX) $(LCFLAGS) -o ex_mcmc ex_mcmc.o $(LIBS)
 
 ex_mcmc_kde: ex_mcmc_kde.o 
-	$(LCXX) $(LCFLAGS_OMP) -o ex_mcmc_kde ex_mcmc_kde.o \
-	$(LIBS)
+	$(LCXX) $(LCFLAGS) -o ex_mcmc_kde ex_mcmc_kde.o $(LIBS)
 
 ex_mcmc_new: ex_mcmc_new.o 
-	$(LCXX) $(LCFLAGS_OMP) -o ex_mcmc_new ex_mcmc_new.o \
-	$(LIBS)
+	$(LCXX) $(LCFLAGS) -o ex_mcmc_new ex_mcmc_new.o $(LIBS)
 
 ex_mcmc_nn: ex_mcmc_nn.o 
-	$(LCXX) $(LCFLAGS_OMP) -o ex_mcmc_nn ex_mcmc_nn.o \
-	$(LIBS)
+	$(LCXX) $(LCFLAGS) -o ex_mcmc_nn ex_mcmc_nn.o $(LIBS)
 
 clean:
 	rm -f *.o *_out *_scr ex_mcmc ex_mcmc_kde ex_mcmc_new ex_mcmc_nn 
 
 # This optional file, makefile.user, is an alternate place to store
 # the user's makefile targets.
--include makefile.sroy
+#-include makefile.sroy
