@@ -1,0 +1,25 @@
+LIBS = -lo2scl -lhdf5 -lgsl \
+	-lreadline -lpython3.13
+FLIBS = -lgfortran
+# PLIBS = -L/usr/lib/x86_64-linux-gnu/ 
+LCXX = g++
+LFC = gfortran
+LMPI_FC = mpif90
+LMPI_CXX = ccache mpic++
+LCFLAGS = -O3 -I/usr/lib/python3.13/site-packages/numpy/_core/include \
+	-DNO_MPI -DNO_OPENMP -DO2SCL_PYTHON -I/usr/include/python3.13 \
+	-Wall -Wno-unused -Wshadow -Wno-deprecated-declarations \
+	-DO2SCL_NO_BOOST_MULTIPRECISION
+LCFLAGS_OMP = -O3 -DNO_MPI -DO2SCL_PYTHON \
+	-fopenmp -I/usr/include/python3.13 \
+	-I/usr/lib/python3.13/site-packages/numpy/_core/include \
+	-Wall -Wno-unused -Wshadow -Wno-deprecated-declarations \
+	-DO2SCL_NO_BOOST_MULTIPRECISION
+LMPI_CFLAGS = -O3 -I/usr/lib/python3.13/site-packages/numpy/_core/include \
+	-DO2SCL_OPENMP -DO2SCL_MPI -O3 \
+	-DO2SCL_PLAIN_HDF5_HEADER -DO2SCL_HDF5_COMP \
+	-I/usr/local/include -fopenmp -I/usr/include/python3.13 -DO2SCL_PYTHON \
+	-Wall -Wno-unused -Wshadow -Wno-deprecated-declarations \
+	-DO2SCL_NO_BOOST_MULTIPRECISION
+
+COMMENT = "default"
