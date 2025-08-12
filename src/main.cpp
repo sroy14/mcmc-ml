@@ -17,19 +17,16 @@
   GNU General Public License for more details.
   
   You should have received a copy of the GNU General Public License
-  along with Mcmc-ml. If not, see <http://www.gnu.org/licenses/>.
+  along with mcmc-ml. If not, see <http://www.gnu.org/licenses/>.
 
   -------------------------------------------------------------------
 */
 
 #include "main.h"
 #include <o2scl/hdf_io.h>
-#include <o2scl/constants.h>
 
 using namespace std;
 using namespace o2scl;
-using namespace o2scl_hdf;
-using namespace o2scl_const;
 using namespace mc2ml;
 
 
@@ -42,18 +39,39 @@ int main::fill(const ubvector &pars, double wgt,
 int main::point(const ubvector &pars, std::ofstream &sout, 
                 double &log_wgt, data &dat) {
   
-  double mu=pars[0];
-  double sigma=pars[1];
-  double alpha=pars[2];
-  
-  double cf=1.0/sqrt(2.0*o2scl_const::pi)/sigma;
-
+  double mean=pars[pvi["mean"]];
+  double width=pow(10.0, pars[pvi["log10_var"]]);
+  double skew=pars[pvi["skewness"]];
   log_wgt=0.0;
 
-  for (double x=0.0; x<3.0; x+=0.1) {
-    double pdf=exp(-0.5*pow((x-mu)/sigma, 2.0));
-    double cdf=1.0+erf((x-mu)*alpha/sigma/sqrt(2.0));
-    log_wgt+=log(cf*pdf*cdf);
+  if (set->inc_lmxb) {
+    for (size_t i=0; i<dat.n_stars; i++) {
+      double m_dat=dat.m_dt[i];
+      double asym=dat.c_68[i];
+      double scale=dat.d_68[i];
+      double m_par=pars[3+i];
+      double wgt=pdf::asym_norm(m_dat-m_par, asym, scale) * 
+                 pdf::skewed_norm(m_par, mean, width, skew);
+      if (wgt<=0.0) {
+        sout << "main::point(): LMXB star " << i 
+             << " returned zero weight." << endl;
+        // log_wgt=double(dat.ix_wgt_zero)-100.0;
+        return dat.ix_wgt_zero;
+      }
+      log_wgt+=log(wgt);
+    }
+  } else {
+    for (size_t i=0; i<set->grid_size; i++) {
+      double m_val=dat.m_grid[i];
+      double wgt=pdf::skewed_norm(m_val, mean, width, skew);
+      if (wgt<=0.0) {
+        sout << "main::point(): grid point " << i 
+             << " returned zero weight." << endl;
+        // log_wgt=double(dat.ix_wgt_zero)-100.0;
+        return dat.ix_wgt_zero;
+      }
+      log_wgt+=log(wgt);
+    }
   }
 
   return 0;
