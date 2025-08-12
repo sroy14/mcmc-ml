@@ -26,7 +26,7 @@
 
 using namespace std;
 using namespace o2scl;
-// using namespace o2scl_hdf;
+using namespace o2scl_hdf;
 using namespace mc2ml;
 
 
@@ -39,7 +39,7 @@ mcmc::mcmc() {
   dat=make_shared<data>();
   
   m_ptr.resize(1);
-  m_ptr[0]=new main;
+  m_ptr[0]=new base;
   m_ptr[0]->set=set;
   m_ptr[0]->dat=dat;
 
@@ -53,7 +53,7 @@ int mcmc::set_threads(vector<string> &sv, bool itive_com) {
     return 1;                                                          
   }
   if (mc_type.length()>0) {
-    cerr << "Threads must be set before MCMC method." << endl;
+    cerr << "Threads must be set before MC method." << endl;
     return 2;
   }
   if (ml_type.length()>0) {
@@ -70,7 +70,7 @@ int mcmc::set_threads(vector<string> &sv, bool itive_com) {
   m_ptr.resize(n_threads);
   
   for (size_t i=0; i<n_threads; i++) {
-    m_ptr[i]=new main;
+    m_ptr[i]=new base;
     m_ptr[i]->set=set;
     m_ptr[i]->n_threads=n_threads;
   }
@@ -85,7 +85,7 @@ void mcmc::file_header(o2scl_hdf::hdf_file &hf) {
   mcmc_para_cli::file_header(hf);
 
   hf.set_szt("grid_size", set->grid_size);
-  hf.sets("mcmc_method", mc_type);
+  hf.sets("mc_method", mc_type);
   hf.sets("ml_method", ml_type);
   hf.seti("debug", set->debug);
   hf.setd("m_low", set->m_low);
@@ -117,6 +117,17 @@ int mcmc::mcmc_init() {
   mcmc_para_cli::mcmc_init();
 
   // Add columns to table here
+  
+  if (set->inc_lmxb) {
+    dat->load_data();
+    for (size_t i=0; i<dat->n_stars; i++) {
+      this->table->new_column("wgt_"+dat->s_names[i]);
+    }
+  } else {
+    for (size_t i=0; i<set->grid_size; i++) {
+      this->table->new_column("wgt_"+o2scl::itos(i));
+    }
+  }
 
   for (size_t i=0; i<n_threads; i++) {
     m_ptr[i]->dat->m_grid=o2scl::uniform_grid_end<double>
@@ -227,11 +238,11 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
 
   vector<double> low, high, init;
 
-  m_ptr[0]->dat->get_param_info(p_names, p_units, low, high, set);
+  dat->get_param_info(p_names, p_units, low, high, set);
   set_names_units(p_names, p_units, d_names, d_units);
 
   if (this->initial_points.size()==0) {
-    m_ptr[0]->dat->set_init_point(init, set);
+    dat->set_init_point(init, set);
     this->initial_points.clear();
     ubvector ip(init.size());
     vector_copy(init, ip);
@@ -257,8 +268,10 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
 
   using namespace std::placeholders;
   for (size_t i=0; i<n_threads; i++) {
-    pf[i]=std::bind(&main::point, m_ptr[i], _1, _2, _3, _4);
-    ff[i]=std::bind(&main::fill,  m_ptr[i], _1, _2, _3, _4);
+    pf[i]=bind(mem_fn<int(const ubvector &, ofstream &, double &, data &)> 
+              (&base::point), m_ptr[i], _2, ref(scr_out), _3, _4);
+    ff[i]=bind(mem_fn<int(const ubvector &, double, vector<double> &, data &)>
+              (&base::fill), m_ptr[i], _1, _2, _3, _4);
   }
 
   vector<data> dv(2*this->n_walk*this->n_threads);

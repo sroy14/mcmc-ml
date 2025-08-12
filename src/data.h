@@ -39,24 +39,41 @@ namespace mc2ml {
     static const int ix_wgt_zero=1;
     static const int ix_grad_failure=2;
 
-    o2scl::table<> grid;
     o2scl::uniform_grid<double> m_grid;
-
-    std::vector<double> m_dt;
+    o2scl::table<> wgt_star;
+    o2scl::table<> wgt_grid;
+    
+    std::vector<std::string> s_names;
+    std::vector<std::string> s_units;
+    std::vector<double> s_mass;
     std::vector<double> c_68;
     std::vector<double> d_68;
+    
     static const size_t n_stars=5;
 
-    data() {
-    }
+    data() {}
 
     data(const data &dat) {
-      grid=dat.grid;
+      m_grid=dat.m_grid;
+      s_names=dat.s_names;
+      s_units=dat.s_units;
+      s_mass=dat.s_mass;
+      c_68=dat.c_68;
+      d_68=dat.d_68;
+      wgt_star=dat.wgt_star;
+      wgt_grid=dat.wgt_grid;
     }
 
     data &operator=(const data &dat) {
       if (this!=&dat) {
-        grid=dat.grid;
+        m_grid=dat.m_grid;
+        s_names=dat.s_names;
+        s_units=dat.s_units;
+        s_mass=dat.s_mass;
+        c_68=dat.c_68;
+        d_68=dat.d_68;
+        wgt_star=dat.wgt_star;
+        wgt_grid=dat.wgt_grid;
       }
       return *this;
     }
@@ -70,7 +87,7 @@ namespace mc2ml {
     virtual void set_init_point(std::vector<double> &,
                                 std::shared_ptr<settings>);
 
-    virtual void load_mass_data();
+    virtual void load_data();
 
   };
 
@@ -79,8 +96,8 @@ namespace mc2ml {
 
   public:
 
-    double funct_x(double, double &, double &);
-    double solve_x(double, double);
+    double funct_1d(double, double &, double &);
+    double solve_1d(double, double);
 
   };
 

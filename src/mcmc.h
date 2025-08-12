@@ -38,7 +38,7 @@
 #include <o2scl/kde_python.h>
 #include <o2scl/cli.h>
 
-#include "main.h"
+#include "base.h"
 
 namespace mc2ml {
   
@@ -50,7 +50,7 @@ namespace mc2ml {
     
     std::string mc_type;
     std::string ml_type;
-    std::vector<main*> m_ptr;
+    std::vector<base*> m_ptr;
     std::shared_ptr<settings> set;
     std::shared_ptr<data> dat;
     o2scl::vec_index pvi;
@@ -68,7 +68,7 @@ namespace mc2ml {
 
     o2scl::cli cl;
 
-    mcmc() {}
+    mcmc();
 
     virtual ~mcmc() {}
 

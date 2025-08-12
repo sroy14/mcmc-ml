@@ -1,2 +1,8 @@
 .vscode
 src/.vscode
+
+*.o
+*~
+mc2ml
+mc2ml_nompi
+test

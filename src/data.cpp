@@ -35,7 +35,7 @@ void data::get_param_info(vector<string> &names,
                           vector<string> &units,
                           vector<double> &low,
                           vector<double> &high,
-                          std::shared_ptr<settings> set) {
+                          shared_ptr<settings> set) {
   names.clear();
   units.clear();
   low.clear();
@@ -46,7 +46,7 @@ void data::get_param_info(vector<string> &names,
   low.push_back(0.5);
   high.push_back(3.0);
 
-  names.push_back("log10_var");
+  names.push_back("log10_std");
   units.push_back("Msun");
   low.push_back(0.0);
   high.push_back(1.0);
@@ -58,19 +58,12 @@ void data::get_param_info(vector<string> &names,
 
   // LMXBs: n_stars = 5
   if (set->inc_lmxb) {
-    names.push_back("M_CygX2");
-    names.push_back("M_XTEJ2123");
-    names.push_back("M_4U1822");
-    names.push_back("M_HerX1");
-    names.push_back("M_2S0921");
-
     for (size_t i=0; i<n_stars; i++) {
-      units.push_back("Msun");
+      names.push_back("M_"+s_names[i]);
+      units.push_back(s_units[i]);
       low.push_back(0.5);
       high.push_back(2.5);
     }
-  
-    load_mass_data();
   }
 
   return;
@@ -79,7 +72,7 @@ void data::get_param_info(vector<string> &names,
 
 
 void data::set_init_point(vector<double> &init,
-                          std::shared_ptr<settings> set) {
+                          shared_ptr<settings> set) {
   
   init.push_back(1.4);
   init.push_back(0.1);
@@ -88,7 +81,7 @@ void data::set_init_point(vector<double> &init,
   // LMXBs: n_stars = 5
   if (set->inc_lmxb) {
     for (size_t i=0; i<n_stars; i++) {
-      init.push_back(m_dt[i]);
+      init.push_back(s_mass[i]);
     }
   }
 
@@ -97,32 +90,45 @@ void data::set_init_point(vector<double> &init,
 } // set_init_point()
 
 
-void data::load_mass_data() {
+void data::load_data() {
 
   // LMXBs: n_stars = 5
-  m_dt.resize(n_stars);
-  vector<double> m_lo(n_stars), m_hi(n_stars);
+  s_names.resize(n_stars);
+  s_units.resize(n_stars);
+  s_mass.resize(n_stars);
+  c_68.resize(n_stars);
+  d_68.resize(n_stars);
+  vector<double> lo_68(n_stars), hi_68(n_stars);
 
-  m_dt.push_back(1.71);
-  m_lo.push_back(0.21);
+  s_names.push_back("CygX2");
+  s_mass.push_back(1.71);
+  lo_68.push_back(0.21);
 
-  m_dt.push_back(1.53);
-  m_lo.push_back(0.42);
+  s_names.push_back("XTEJ2123");
+  s_mass.push_back(1.53);
+  lo_68.push_back(0.42);
 
-  m_dt.push_back(1.96);
-  m_lo.push_back(0.36);
+  s_names.push_back("4U1822");
+  s_mass.push_back(1.96);
+  lo_68.push_back(0.36);
 
-  m_dt.push_back(1.073);
-  m_lo.push_back(0.36);
+  s_names.push_back("HerX1");
+  s_mass.push_back(1.073);
+  lo_68.push_back(0.36);
 
-  m_dt.push_back(1.44);
-  m_lo.push_back(0.1);
+  s_names.push_back("2S0921");
+  s_mass.push_back(1.44);
+  lo_68.push_back(0.1);
+
+  for (size_t i=0; i<n_stars; i++) {
+    s_units.push_back("Msun");
+  }
 
   solver s;
   for (size_t i=0; i<n_stars; i++) {
-    m_hi[i]=m_lo[i];
-    double c=sqrt(m_hi[i]/m_lo[i]);
-    double d=s.solve_x(m_lo[i], m_hi[i]);
+    hi_68.push_back(lo_68[i]); // Only for LMXBs
+    double c=sqrt(hi_68[i]/lo_68[i]);
+    double d=s.solve_1d(lo_68[i], hi_68[i]);
     c_68.push_back(c);
     d_68.push_back(d);
   }
@@ -130,20 +136,20 @@ void data::load_mass_data() {
 }
 
 
-double solver::funct_x(double x, double &l, double &u) {
+double solver::funct_1d(double x, double &l, double &u) {
   double c=sqrt(u/l);
   return c*c*erf(u/(sqrt(2.0)*c*x)) - erf(-c*l/(sqrt(2.0)*x))
     - 0.68*(c*c+1.0);
 }
 
 
-double solver::solve_x(double l, double u) {
+double solver::solve_1d(double l, double u) {
   
   root_brent_gsl<> rbg;
   rbg.verbose=0;
 
   funct f=bind(mem_fn<double(double, double &, double &)>
-		  (&funct_x), this, placeholders::_1, ref(l), ref(u));
+		  (&solver::funct_1d), this, placeholders::_1, ref(l), ref(u));
 
   double x1=0.0, x2=1.0;
 

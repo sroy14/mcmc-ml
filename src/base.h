@@ -22,8 +22,8 @@
   -------------------------------------------------------------------
 */
 
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef BASE_H
+#define BASE_H
 
 #include <o2scl/constants.h>
 
@@ -31,6 +31,8 @@
 #include "settings.h"
 
 namespace mc2ml {
+
+  typedef boost::numeric::ublas::vector<double> ubvector;
   
   typedef std::function<int(size_t, const ubvector &, 
                             double &, data &)> point_funct;
@@ -41,7 +43,7 @@ namespace mc2ml {
   typedef std::function<int(size_t, const ubvector &, point_funct &, 
                             ubvector &, data &, bool &)> deriv_funct;
   
-  class main {
+  class base {
   
   public:
     
@@ -55,11 +57,11 @@ namespace mc2ml {
 
     o2scl::vec_index pvi;
 
-    main() {
+    base() {
       n_threads=1;
     }
 
-    virtual ~main() {
+    virtual ~base() {
     }
 
     virtual int point(const ubvector &, std::ofstream &, double &, data &);
