@@ -1,6 +1,7 @@
 .vscode
 src/.vscode
-
+build/*
+out/*
 *.o
 *~
 mc2ml

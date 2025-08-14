@@ -22,32 +22,34 @@
 
 # Compilers
 CXX     = g++
-MPI_CXX = mpicxx
+CXX_MPI = mpicxx
 
 # Language & warnings
 STD   = -std=c++20
 WARN  = -Wall -Wextra -Wpedantic -Wshadow -Wformat=2 -Woverloaded-virtual -Wnon-virtual-dtor
 
-# Python (for o2scl's <Python.h>)
-PY_INCLUDES = -I/usr/include/python3.13 \
-	-I/usr/lib/python3.13/site-packages/numpy/_core/include
-PY_LDFLAGS  = -L/usr/lib  -ldl  -lm
+# Python flags
+PY_INC = -I/usr/include/python3.13 -I/usr/lib/python3.13/site-packages/numpy/_core/include
+PY_LIB = -L/usr/lib -ldl -lm
 
 # Build flags
-CPPFLAGS = -Isrc $(PY_INCLUDES)
+OMP_FLAGS = -fopenmp -DO2SCL_OPENMP
+MPI_FLAGS = -DO2SCL_MPI
+
+CPPFLAGS = $(PY_INC)
 CXXFLAGS = $(STD) $(WARN) -O3 -DNDEBUG -pipe -MMD -MP
-LDFLAGS  = $(PY_LDFLAGS)
+LDFLAGS  = $(PY_LIB)
 
 # Layout
 SRC_DIR = src
-OBJDIR  = build
+OBJ_DIR = build
 
 # Sources
-SRCS    = $(wildcard $(SRC_DIR)/*.cpp)
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 
 # Objects (single build dir; distinct suffixes to avoid collisions)
-OBJS_MPI   = $(patsubst $(SRC_DIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
-OBJS_NOMPI = $(patsubst $(SRC_DIR)/%.cpp,$(OBJDIR)/%.nompi.o,$(SRCS))
+OBJS_MPI   = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
+OBJS_NOMPI = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.nompi.o,$(SRCS))
 
 DEPS_MPI   = $(OBJS_MPI:.o=.d)
 DEPS_NOMPI = $(OBJS_NOMPI:.o=.d)
@@ -61,17 +63,17 @@ all: help
 
 # ===== MPI build =================================================
 $(TARGET_MPI): $(OBJS_MPI)
-	$(MPI_CXX) $(LDFLAGS) -o $@ $^
+	$(CXX_MPI) $(LDFLAGS) -o $@ $^
 
-$(OBJDIR)/%.o: $(SRC_DIR)/%.cpp
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(MPI_CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	$(CXX_MPI) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 # ===== Non-MPI build =============================================
 $(TARGET_NOMPI): $(OBJS_NOMPI)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
-$(OBJDIR)/%.nompi.o: $(SRC_DIR)/%.cpp
+$(OBJ_DIR)/%.nompi.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
@@ -80,7 +82,7 @@ NP = 4
 
 help:
 	@echo "Targets:"
-	@echo "  mc2ml         (MPI build, uses $(MPI_CXX))"
+	@echo "  mc2ml         (MPI build, uses $(CXX_MPI))"
 	@echo "  mc2ml_nompi   (non-MPI build, uses $(CXX))"
 	@echo "  run           (mpirun -np \$$NP ./mc2ml)"
 	@echo "  run_nompi     (./mc2ml_nompi)"
@@ -93,7 +95,7 @@ run_nompi: $(TARGET_NOMPI)
 	./$(TARGET_NOMPI)
 
 clean:
-	rm -rf $(OBJDIR) $(TARGET_MPI) $(TARGET_NOMPI)
+	rm -rf $(OBJ_DIR) $(TARGET_MPI) $(TARGET_NOMPI)
 
 # Auto deps
 -include $(DEPS_MPI) $(DEPS_NOMPI)
