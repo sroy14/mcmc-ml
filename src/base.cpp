@@ -31,15 +31,15 @@ using namespace mc2ml;
 
 
 int base::fill(const ubvector &pars, double wgt, 
-               vector<double> &line, data &dat) {
+               vector<double> &line, data &d) {
   
   if (set->inc_lmxb) {
-    for (size_t i=0; i<dat.n_stars; i++) {
-      line.push_back(dat.wgt_star.get("wgt", i));
+    for (size_t i=0; i<d.n_stars; i++) {
+      line.push_back(d.wgt_star.get("wgt", i));
     }
   } else {
     for (size_t i=0; i<set->grid_size; i++) {
-      line.push_back(dat.wgt_grid.get("wgt", i));
+      line.push_back(d.wgt_grid.get("wgt", i));
     }
   }
 
@@ -49,7 +49,7 @@ int base::fill(const ubvector &pars, double wgt,
 
 
 int base::point(const ubvector &pars, std::ofstream &sout, 
-                double &log_wgt, data &dat) {
+                double &log_wgt, data &d) {
   
   double mean=pars[pvi["mean"]];
   double width=pow(10.0, pars[pvi["log10_std"]]);
@@ -58,16 +58,16 @@ int base::point(const ubvector &pars, std::ofstream &sout,
 
   if (set->inc_lmxb) {
 
-    if (dat.wgt_star.get_ncolumns()==0) {
-      dat.wgt_star.new_column("wgt");
-      dat.wgt_star.set_nlines(dat.n_stars);
+    if (d.wgt_star.get_ncolumns()==0) {
+      d.wgt_star.new_column("wgt");
+      d.wgt_star.set_nlines(d.n_stars);
     }
 
-    for (size_t i=0; i<dat.n_stars; i++) {
+    for (size_t i=0; i<d.n_stars; i++) {
 
-      double m_dat=dat.s_mass[i];
-      double asym=dat.c_68[i];
-      double scale=dat.d_68[i];
+      double m_dat=d.s_mass[i];
+      double asym=d.c_68[i];
+      double scale=d.d_68[i];
       double m_par=pars[3+i];
       double wgt=pdf::asym_norm(m_dat-m_par, asym, scale) * 
                  pdf::skewed_norm(m_par, mean, width, skew);
@@ -75,34 +75,34 @@ int base::point(const ubvector &pars, std::ofstream &sout,
       if (wgt<=0.0) {
         sout << "base::point(): LMXB star " << i 
              << " returned zero weight." << endl;
-        // log_wgt=double(dat.ix_wgt_zero)-100.0;
-        return dat.ix_wgt_zero;
+        // log_wgt=double(d.ix_wgt_zero)-100.0;
+        return d.ix_wgt_zero;
       }
 
-      dat.wgt_star.set("wgt", i, wgt);
+      d.wgt_star.set("wgt", i, wgt);
       log_wgt+=log(wgt);
 
     }
 
   } else { // !set->inc_lmxb
 
-    if (dat.wgt_grid.get_ncolumns()==0) {
-      dat.wgt_grid.new_column("wgt");
-      dat.wgt_grid.set_nlines(set->grid_size);
+    if (d.wgt_grid.get_ncolumns()==0) {
+      d.wgt_grid.new_column("wgt");
+      d.wgt_grid.set_nlines(set->grid_size);
     }
 
     for (size_t i=0; i<set->grid_size; i++) {
-      double m_val=dat.m_grid[i];
+      double m_val=d.m_grid[i];
       double wgt=pdf::skewed_norm(m_val, mean, width, skew);
 
       if (wgt<=0.0) {
         sout << "base::point(): grid point " << i 
              << " returned zero weight." << endl;
-        // log_wgt=double(dat.ix_wgt_zero)-100.0;
-        return dat.ix_wgt_zero;
+        // log_wgt=double(d.ix_wgt_zero)-100.0;
+        return d.ix_wgt_zero;
       }
 
-      dat.wgt_grid.set("wgt", i, wgt);
+      d.wgt_grid.set("wgt", i, wgt);
       log_wgt+=log(wgt);
     }
   }
@@ -112,6 +112,6 @@ int base::point(const ubvector &pars, std::ofstream &sout,
 }
 
 int base::deriv(const ubvector &pars, point_funct &pf, 
-                ubvector &grad, data &dat, bool &success) {
+                ubvector &grad, data &d, bool &success) {
   return 0;
 }

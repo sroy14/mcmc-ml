@@ -51,7 +51,9 @@ namespace mc2ml {
     
     static const size_t n_stars=5;
 
-    data() {}
+    data() {};
+
+    virtual ~data()=default;
 
     data(const data &dat) {
       m_grid=dat.m_grid;

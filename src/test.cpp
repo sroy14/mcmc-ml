@@ -1,15 +1,9 @@
-/* ==============================================================
-   pdf_demo.cpp  —  compile with:  g++ -std=c++17 -O3 pdf_demo.cpp -o demo
-   ============================================================== */
 #include <cmath>
 #include <functional>
 #include <iomanip>
 #include <iostream>
-#include <o2scl/constants.h>   // provides o2scl_const::pi
+#include <o2scl/constants.h> 
 
-// ------------------------------------------------------------------
-//  Renamed PDF class (exactly your latest version)
-// ------------------------------------------------------------------
 class pdf {
 
 public:

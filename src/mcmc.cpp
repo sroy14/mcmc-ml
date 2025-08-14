@@ -190,6 +190,10 @@ int mcmc::initial_point_best(vector<string> &sv, bool itive_com) {
   }
 
   size_t n_pars;
+
+  if (set->inc_lmxb) n_pars=dat->n_stars+3;
+  else n_pars=3;
+
   string fname=sv[1];
   size_t pos=fname.find("<rank>");
 
@@ -212,6 +216,10 @@ int mcmc::initial_point_last(vector<string> &sv, bool itive_com) {
   }
 
   size_t n_pars;
+  
+  if (set->inc_lmxb) n_pars=dat->n_stars+3;
+  else n_pars=3;
+
   string fname=sv[1];
   size_t pos=fname.find("<rank>");
 

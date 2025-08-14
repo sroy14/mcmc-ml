@@ -43,7 +43,7 @@ namespace mc2ml {
       data_dir="data";
     }
 
-    o2scl::cli::parameter_int p_grid_size;
+    o2scl::cli::parameter_size_t p_grid_size;
     o2scl::cli::parameter_int p_verbose;
     o2scl::cli::parameter_bool p_debug;
     o2scl::cli::parameter_bool p_inc_lmxb;
@@ -52,7 +52,7 @@ namespace mc2ml {
     o2scl::cli::parameter_double p_m_high;
     o2scl::cli::parameter_string p_data_dir;
 
-    int grid_size;
+    size_t grid_size;
     int verbose;
     bool debug;
     bool inc_lmxb;
@@ -62,7 +62,7 @@ namespace mc2ml {
     std::string data_dir;
 
     void setup_cli(o2scl::cli &cl) {
-      p_grid_size.i=&grid_size;
+      p_grid_size.s=&grid_size;
       p_grid_size.help="Grid size (default 100).";
       cl.par_list.insert(std::make_pair("grid_size",&p_grid_size));
 
