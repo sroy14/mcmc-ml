@@ -157,6 +157,9 @@ int mcmc::set_method_mc(std::vector<std::string> &sv, bool itive_com) {
   mc_type=sv[1];
   m_ptr[0]->mc_type=sv[1];
 
+  if (mc_type=="ai") this->aff_inv=1;
+  else this->aff_inv=0;
+
   return 0;
 
 } // set_method_mc()
@@ -165,8 +168,9 @@ int mcmc::set_method_mc(std::vector<std::string> &sv, bool itive_com) {
 int mcmc::set_method_ml(std::vector<std::string> &sv, bool itive_com) {
 
   if (sv.size()<2) {
-    cerr << "ML method not specified." << endl;
-    return o2scl::exc_efailed;
+    cout << "ML method not specified: running standalone MCMC." 
+         << endl;
+    // return o2scl::exc_efailed;
   }
 
   if (ml_type==sv[1]) {
@@ -236,7 +240,7 @@ int mcmc::initial_point_last(vector<string> &sv, bool itive_com) {
 
 int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
 
-  if (sv.size()<2) {
+  if (mc_type.empty()) {
     cerr << "MCMC method not specified." << endl;
     return 1;
   }

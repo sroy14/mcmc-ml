@@ -99,7 +99,7 @@ $(OBJ_DIR)/%.mpi.o: $(SRC_DIR)/%.cpp
 	$(CXX_MPI) $(CXXFLAGS) $(CFLAGS_MPI) -c $< -o $@
 
 # ----- Convenience ----------------------------------------------
-NP = 4
+NP = 8
 
 help:
 	@echo "Targets:"
@@ -110,11 +110,19 @@ help:
 	@echo "  info            (print -L/-l entries in flags)"
 	@echo "  clean           (remove build/ and executables)"
 
-ai: $(TARGET)
-	./$(TARGET)
+run: $(TARGET)
+	./$(TARGET) -threads 1 \
+	-method ai -set prefix out/ai -set n_walk 24 \
+	-set max_iters 10000 -set file_update_time 1 \
+	-set verbose 1 -set mcmc_verbose 2 -set inc_lmxb 1 \
+	-mcmc
 
-ai_mpi: $(TARGET_MPI)
-	mpirun -np $(NP) ./$(TARGET_MPI)
+run_mpi: $(TARGET_MPI)
+	mpirun -np $(NP) ./$(TARGET_MPI) -threads 1 \
+	-method ai -set prefix out/ai -set n_walk 24 \
+	-set max_iters 10000 -set file_update_time 1 \
+	-set verbose 1 -set mcmc_verbose 2 -set inc_lmxb 1 \
+	-mcmc
 
 # Print library-related tokens from flags
 info:
