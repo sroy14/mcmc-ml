@@ -36,10 +36,6 @@ void data::get_param_info(vector<string> &names,
                           vector<double> &low,
                           vector<double> &high,
                           shared_ptr<settings> set) {
-  names.clear();
-  units.clear();
-  low.clear();
-  high.clear();
 
   names.push_back("mean");
   units.push_back("Msun");
@@ -73,7 +69,7 @@ void data::get_param_info(vector<string> &names,
 
 void data::set_init_point(vector<double> &init,
                           shared_ptr<settings> set) {
-  
+
   init.push_back(1.4);
   init.push_back(0.1);
   init.push_back(0.0);
@@ -93,12 +89,7 @@ void data::set_init_point(vector<double> &init,
 void data::load_data() {
 
   // LMXBs: n_stars = 5
-  s_names.resize(n_stars);
-  s_units.resize(n_stars);
-  s_mass.resize(n_stars);
-  c_68.resize(n_stars);
-  d_68.resize(n_stars);
-  vector<double> lo_68(n_stars), hi_68(n_stars);
+  vector<double> lo_68, hi_68;
 
   s_names.push_back("CygX2");
   s_mass.push_back(1.71);

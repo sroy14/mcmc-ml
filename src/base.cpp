@@ -59,8 +59,8 @@ int base::point(const ubvector &pars, std::ofstream &sout,
   if (set->inc_lmxb) {
 
     if (d.wgt_star.get_ncolumns()==0) {
-      d.wgt_star.new_column("wgt");
       d.wgt_star.set_nlines(d.n_stars);
+      d.wgt_star.new_column("wgt");
     }
 
     for (size_t i=0; i<d.n_stars; i++) {

@@ -72,6 +72,7 @@ int mcmc::set_threads(vector<string> &sv, bool itive_com) {
   for (size_t i=0; i<n_threads; i++) {
     m_ptr[i]=new base;
     m_ptr[i]->set=set;
+    m_ptr[i]->dat=dat;
     m_ptr[i]->n_threads=n_threads;
   }
   
@@ -119,7 +120,6 @@ int mcmc::mcmc_init() {
   // Add columns to table here
   
   if (set->inc_lmxb) {
-    dat->load_data();
     for (size_t i=0; i<dat->n_stars; i++) {
       this->table->new_column("wgt_"+dat->s_names[i]);
     }
@@ -250,6 +250,7 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
 
   vector<double> low, high, init;
 
+  if (set->inc_lmxb) dat->load_data();
   dat->get_param_info(p_names, p_units, low, high, set);
   set_names_units(p_names, p_units, d_names, d_units);
 
@@ -270,7 +271,6 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
   }
 
   size_t np=p_names.size();
-  
   ubvector lo(low.size()), hi(high.size());
   vector_copy(low, lo);
   vector_copy(high, hi);
@@ -286,7 +286,8 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
               (&base::fill), m_ptr[i], _1, _2, _3, _4);
   }
 
-  vector<data> dv(2*this->n_walk*this->n_threads);
+  size_t sz=2*this->n_walk*this->n_threads;
+  vector<data> dv(sz, *dat);
 
   this->mcmc_fill(np, lo, hi, pf, ff, dv);
 

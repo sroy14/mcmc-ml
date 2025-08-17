@@ -82,6 +82,9 @@ TARGET_MPI = mc2ml_mpi
 # Default
 all: help
 
+$(OUT_DIR):
+	@mkdir -p $(OUT_DIR)
+
 # ----- Non-MPI build ---------------------------------------------
 $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
@@ -110,16 +113,16 @@ help:
 	@echo "  info            (print -L/-l entries in flags)"
 	@echo "  clean           (remove build/ and executables)"
 
-run: $(TARGET)
+run: $(TARGET) $(OUT_DIR)
 	./$(TARGET) -threads 1 \
-	-method ai -set prefix out/ai -set n_walk 24 \
+	-method ai -set prefix $(OUT_DIR)/ai -set n_walk 24 \
 	-set max_iters 10000 -set file_update_time 1 \
 	-set verbose 1 -set mcmc_verbose 2 -set inc_lmxb 1 \
 	-mcmc
 
-run_mpi: $(TARGET_MPI)
+run_mpi: $(TARGET_MPI) $(OUT_DIR)
 	mpirun -np $(NP) ./$(TARGET_MPI) -threads 1 \
-	-method ai -set prefix out/ai -set n_walk 24 \
+	-method ai -set prefix $(OUT_DIR)/ai -set n_walk 24 \
 	-set max_iters 10000 -set file_update_time 1 \
 	-set verbose 1 -set mcmc_verbose 2 -set inc_lmxb 1 \
 	-mcmc
