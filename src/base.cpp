@@ -91,7 +91,10 @@ int base::point(const ubvector &pars, std::ofstream &sout,
       d.wgt_grid.set_nlines(set->grid_size);
     }
 
+    double sum=0.0, dx=d.m_grid[1]-d.m_grid[0];
+
     for (size_t i=0; i<set->grid_size; i++) {
+
       double m_val=d.m_grid[i];
       double wgt=pdf::skewed_norm(m_val, mean, width, skew);
 
@@ -103,8 +106,13 @@ int base::point(const ubvector &pars, std::ofstream &sout,
       }
 
       d.wgt_grid.set("wgt", i, wgt);
-      log_wgt+=log(wgt);
+      sum+=wgt;
+      
     }
+
+    double integral=sum*dx;
+    log_wgt+=log(integral);
+  
   }
 
   return 0;

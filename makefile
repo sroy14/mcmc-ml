@@ -161,7 +161,9 @@ info:
 	@echo
 
 	@printf "`tput bold`# Compiler flags\n`tput sgr0`"
-	@echo "CXXFLAGS = $(STD) $(OPT_FLAGS) $(WARN) $(OMP_FLAGS) $(HDF_FLAGS) $(PY_INC) $(MPI_FLAGS)"
+	@echo "CXXFLAGS = $(STD) $(OPT_FLAGS) $(WARN)"
+	@echo "	   $(OMP_FLAGS) $(HDF_FLAGS) $(MPI_FLAGS)"
+	@echo "           $(PY_INC)"
 	@echo
 
 	@printf "`tput bold`# Library flags\n`tput sgr0`"

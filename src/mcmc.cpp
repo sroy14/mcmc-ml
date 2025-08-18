@@ -41,7 +41,6 @@ mcmc::mcmc() {
   m_ptr.resize(1);
   m_ptr[0]=new base;
   m_ptr[0]->set=set;
-  m_ptr[0]->dat=dat;
 
 } // mcmc()
 
@@ -72,7 +71,6 @@ int mcmc::set_threads(vector<string> &sv, bool itive_com) {
   for (size_t i=0; i<n_threads; i++) {
     m_ptr[i]=new base;
     m_ptr[i]->set=set;
-    m_ptr[i]->dat=dat;
     m_ptr[i]->n_threads=n_threads;
   }
   
@@ -100,9 +98,6 @@ void mcmc::file_header(o2scl_hdf::hdf_file &hf) {
 
 
 int mcmc::mcmc_init() {
-
-  /*cout << "(rank " << this->mpi_rank << ") "
-       << "Start mcmc::mcmc_init()." << endl;*/
   
   if (m_ptr.size()<1) {
     O2SCL_ERR("mcmc::mcmc_init(): Object m_ptr invalid.", exc_esanity);
@@ -128,14 +123,6 @@ int mcmc::mcmc_init() {
       this->table->new_column("wgt_"+o2scl::itos(i));
     }
   }
-
-  for (size_t i=0; i<n_threads; i++) {
-    m_ptr[i]->dat->m_grid=o2scl::uniform_grid_end<double>
-      (set->m_low, set->m_high, set->grid_size-1);
-  }
-
-  /*cout << "(rank " << this->mpi_rank << ") "
-       << "End mcmc::mcmc_init()." << endl;*/
 
   return 0;
 
@@ -244,6 +231,10 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
     cerr << "MCMC method not specified." << endl;
     return 1;
   }
+  
+  // Initialize grid before passing 'dat' object to base::point()
+  dat->m_grid=o2scl::uniform_grid_end<double>
+      (set->m_low, set->m_high, set->grid_size-1);
 
   vector<string> p_names, p_units;
   vector<string> d_names, d_units;
@@ -304,8 +295,10 @@ void mcmc::mcmc_setup_cli() {
   static const int n_opt=6;
 
   comm_option_s options[n_opt] = {
+
     /* Format: {short_opt, long_opt, help_desc, min_params, max_params,
      param_desc, help, func_ptr , com_type} */
+
     {'m', "mcmc", "Perform the MCMC simulation.", 0, 0, "",
       string("This is the main part of the code which performs ") +
        "the Markov Chain Monte Carlo simulation. Must set all " +

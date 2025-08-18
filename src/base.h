@@ -49,7 +49,6 @@ namespace mc2ml {
     
     int n_threads;
     
-    std::shared_ptr<data> dat;
     std::shared_ptr<settings> set;
     
     std::string mc_type;
