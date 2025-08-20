@@ -64,7 +64,7 @@ namespace mc2ml {
     }
 
     virtual int point(const ubvector &, std::ofstream &, double &, data &);
-    virtual int deriv(const ubvector &, point_funct &, ubvector &, data &, bool &);
+    virtual int deriv(const ubvector &, point_funct &, ubvector &, data &);
     virtual int fill(const ubvector &, double, std::vector<double> &, data &);
 
   };

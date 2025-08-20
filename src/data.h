@@ -48,8 +48,18 @@ namespace mc2ml {
     std::vector<double> s_mass;
     std::vector<double> c_68;
     std::vector<double> d_68;
-    
-    static const size_t n_stars=5;
+
+    // Number of binary populations
+    static const size_t n_pops=1;
+
+    // Number of distribution parameters
+    static const size_t n_distp=3*n_pops;
+
+    // Number of stars in LMXB
+    static const size_t n_lmxb=5;
+
+    // Total number of stars
+    static const size_t n_stars=n_lmxb;
 
     data() {};
 

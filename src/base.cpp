@@ -31,15 +31,15 @@ using namespace mc2ml;
 
 
 int base::fill(const ubvector &pars, double wgt, 
-               vector<double> &line, data &d) {
+               vector<double> &line, data &dat) {
   
   if (set->inc_lmxb) {
-    for (size_t i=0; i<d.n_stars; i++) {
-      line.push_back(d.wgt_star.get("wgt", i));
+    for (size_t i=0; i<dat.n_stars; i++) {
+      line.push_back(dat.wgt_star.get("wgt", i));
     }
   } else {
     for (size_t i=0; i<set->grid_size; i++) {
-      line.push_back(d.wgt_grid.get("wgt", i));
+      line.push_back(dat.wgt_grid.get("wgt", i));
     }
   }
 
@@ -49,7 +49,7 @@ int base::fill(const ubvector &pars, double wgt,
 
 
 int base::point(const ubvector &pars, std::ofstream &sout, 
-                double &log_wgt, data &d) {
+                double &log_wgt, data &dat) {
   
   double mean=pars[pvi["mean"]];
   double width=pow(10.0, pars[pvi["log10_std"]]);
@@ -58,16 +58,16 @@ int base::point(const ubvector &pars, std::ofstream &sout,
 
   if (set->inc_lmxb) {
 
-    if (d.wgt_star.get_ncolumns()==0) {
-      d.wgt_star.set_nlines(d.n_stars);
-      d.wgt_star.new_column("wgt");
+    if (dat.wgt_star.get_ncolumns()==0) {
+      dat.wgt_star.set_nlines(dat.n_stars);
+      dat.wgt_star.new_column("wgt");
     }
 
-    for (size_t i=0; i<d.n_stars; i++) {
+    for (size_t i=0; i<dat.n_stars; i++) {
 
-      double m_dat=d.s_mass[i];
-      double asym=d.c_68[i];
-      double scale=d.d_68[i];
+      double m_dat=dat.s_mass[i];
+      double asym=dat.c_68[i];
+      double scale=dat.d_68[i];
       double m_par=pars[3+i];
       double wgt=pdf::asym_norm(m_dat-m_par, asym, scale) * 
                  pdf::skewed_norm(m_par, mean, width, skew);
@@ -75,37 +75,37 @@ int base::point(const ubvector &pars, std::ofstream &sout,
       if (wgt<=0.0) {
         sout << "base::point(): LMXB star " << i 
              << " returned zero weight." << endl;
-        // log_wgt=double(d.ix_wgt_zero)-100.0;
-        return d.ix_wgt_zero;
+        // log_wgt=double(dat.ix_wgt_zero)-100.0;
+        return dat.ix_wgt_zero;
       }
 
-      d.wgt_star.set("wgt", i, wgt);
+      dat.wgt_star.set("wgt", i, wgt);
       log_wgt+=log(wgt);
 
     }
 
   } else { // !set->inc_lmxb
 
-    if (d.wgt_grid.get_ncolumns()==0) {
-      d.wgt_grid.new_column("wgt");
-      d.wgt_grid.set_nlines(set->grid_size);
+    if (dat.wgt_grid.get_ncolumns()==0) {
+      dat.wgt_grid.new_column("wgt");
+      dat.wgt_grid.set_nlines(set->grid_size);
     }
 
-    double sum=0.0, dx=d.m_grid[1]-d.m_grid[0];
+    double sum=0.0, dx=dat.m_grid[1]-dat.m_grid[0];
 
     for (size_t i=0; i<set->grid_size; i++) {
 
-      double m_val=d.m_grid[i];
+      double m_val=dat.m_grid[i];
       double wgt=pdf::skewed_norm(m_val, mean, width, skew);
 
       if (wgt<=0.0) {
         sout << "base::point(): grid point " << i 
              << " returned zero weight." << endl;
-        // log_wgt=double(d.ix_wgt_zero)-100.0;
-        return d.ix_wgt_zero;
+        // log_wgt=double(dat.ix_wgt_zero)-100.0;
+        return dat.ix_wgt_zero;
       }
 
-      d.wgt_grid.set("wgt", i, wgt);
+      dat.wgt_grid.set("wgt", i, wgt);
       sum+=wgt;
       
     }
@@ -120,6 +120,31 @@ int base::point(const ubvector &pars, std::ofstream &sout,
 }
 
 int base::deriv(const ubvector &pars, point_funct &pf, 
-                ubvector &grad, data &d, bool &success) {
+                ubvector &grad, data &dat) {
+  
+  size_t n_params=pars.size();
+  if (grad.size()!=n_params) grad.resize(n_params);
+
+  double weights=0.0;
+
+  for (size_t i=0; i<dat.n_stars; i++) {
+    weights+=dat.wgt_star.get("wgt", i);
+  }
+
+  // Main loop over all (i,j)
+  for (size_t i=0; i<dat.n_pops; i++) {
+    
+    double mean=pars[pvi["mean"]];
+    double width=pow(10.0, pars[pvi["log10_std"]]);
+    double skew=pars[pvi["skewness"]];
+
+    for (size_t j=0; j<dat.n_lmxb; j++) {
+      double m_dat=dat.s_mass[j];
+      double m_par=pars[dat.n_distp+j];
+      double z=(m_par-mean)/width;
+      double ratio=pdf::s_norm(skew*z)/pdf::c_norm(skew*z);
+    }
+  }
+
   return 0;
 }
