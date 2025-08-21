@@ -61,6 +61,7 @@ namespace mc2ml {
     virtual int mcmc_init();
     virtual int mcmc_func(std::vector<std::string> &, bool);
     virtual int set_threads(std::vector<std::string> &, bool);
+    virtual int set_param_space(std::vector<std::string> &, bool);
     virtual int initial_point_last(std::vector<std::string> &, bool);
     virtual int initial_point_best(std::vector<std::string> &, bool);
 

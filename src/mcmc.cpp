@@ -157,7 +157,7 @@ int mcmc::set_method_ml(std::vector<std::string> &sv, bool itive_com) {
   if (sv.size()<2) {
     cout << "ML method not specified: running standalone MCMC." 
          << endl;
-    // return o2scl::exc_efailed;
+    return 0;
   }
 
   if (ml_type==sv[1]) {
@@ -241,7 +241,7 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
 
   vector<double> low, high, init;
 
-  if (set->inc_lmxb) dat->load_data();
+  if (set->inc_lmxb) dat->load_data(set);
   dat->get_param_info(p_names, p_units, low, high, set);
   set_names_units(p_names, p_units, d_names, d_units);
 

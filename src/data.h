@@ -49,17 +49,17 @@ namespace mc2ml {
     std::vector<double> c_68;
     std::vector<double> d_68;
 
-    // Number of binary populations
-    static const size_t n_pops=1;
-
-    // Number of distribution parameters
-    static const size_t n_distp=3*n_pops;
-
     // Number of stars in LMXB
     static const size_t n_lmxb=5;
 
-    // Total number of stars
-    static const size_t n_stars=n_lmxb;
+    // Number of stars in HMXB
+    static const size_t n_hmxb=11;
+
+    // Number of stars in NS-NS
+    static const size_t n_nsns=22;
+
+    // Number of stars in NS-WD
+    static const size_t n_nswd=32;
 
     data() {};
 
@@ -99,7 +99,7 @@ namespace mc2ml {
     virtual void set_init_point(std::vector<double> &,
                                 std::shared_ptr<settings>);
 
-    virtual void load_data();
+    virtual void load_data(std::shared_ptr<settings>);
 
   };
 
