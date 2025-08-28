@@ -61,6 +61,9 @@ namespace mc2ml {
     // Number of stars in NS-WD
     static const size_t n_nswd=32;
 
+    // Total number of stars
+    size_t n_stars;
+
     data() {};
 
     virtual ~data()=default;

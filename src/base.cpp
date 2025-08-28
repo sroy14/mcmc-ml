@@ -32,34 +32,9 @@ using namespace mc2ml;
 
 int base::fill(const ubvector &pars, double wgt, 
                vector<double> &line, data &dat) {
-
-  if (set->param_space=="S" || set->param_space=="M" ||
-      set->param_space=="L" || set->param_space=="XL") {
-    for (size_t i=0; i<dat.n_lmxb; i++) {
-      line.push_back(dat.wgt_star.get("wgt", i));
-    }
-  }
-
-  if (set->param_space=="M" ||
-      set->param_space=="L" ||
-      set->param_space=="XL") {
-    for (size_t i=dat.n_lmxb; i<dat.n_lmxb+dat.n_hmxb; i++) {
-      line.push_back(dat.wgt_star.get("wgt", i));
-    }
-  }
-
-  if (set->param_space=="L" || set->param_space=="XL") {
-    for (size_t i=dat.n_lmxb+dat.n_hmxb; 
-         i<dat.n_lmxb+dat.n_hmxb+dat.n_nsns; i++) {
-      line.push_back(dat.wgt_star.get("wgt", i));
-    }
-  }
-
-  if (set->param_space=="XL") {
-    for (size_t i=dat.n_lmxb+dat.n_hmxb+dat.n_nsns; 
-         i<dat.n_lmxb+dat.n_hmxb+dat.n_nsns+dat.n_nswd; i++) {
-      line.push_back(dat.wgt_star.get("wgt", i));
-    }
+  
+  for (size_t i=0; i<dat.n_stars; i++) {
+    line.push_back(dat.wgt_star.get("wgt", i));
   }
 
   return 0;
@@ -71,54 +46,36 @@ int base::point(const ubvector &pars, std::ofstream &sout,
                 double &log_wgt, data &dat) {
   
   log_wgt=0.0;
-  size_t n_stars;
-
-  if (set->param_space=="S") {
-    n_stars=dat.n_lmxb;
-  } else if (set->param_space=="M") {
-    n_stars=dat.n_lmxb+dat.n_hmxb;
-  } else if (set->param_space=="L") {
-    n_stars=dat.n_lmxb+dat.n_hmxb+dat.n_nsns;
-  } else if (set->param_space=="XL") {
-    n_stars=dat.n_lmxb+dat.n_hmxb+dat.n_nsns+dat.n_nswd;
-  } else {
-    sout << "base::point(): Unknown parameter space." << endl;
-    return -1;
-  }
-
-  vector<double> mean(n_stars), width(n_stars);
-  vector<double> skew(n_stars), mass(n_stars);
 
   if (dat.wgt_star.get_ncolumns()==0) {
     dat.wgt_star.new_column("wgt");
-    dat.wgt_star.set_nlines(n_stars);
+    dat.wgt_star.set_nlines(dat.n_stars);
   }
 
-  if (set->inc_lmxb) {
+  vector<size_t> v={dat.n_lmxb, dat.n_hmxb, dat.n_nsns, dat.n_nswd};
 
-    double mean=pars[pvi["mean"]];
-    double width=pow(10.0, pars[pvi["log10_std"]]);
-    double skew=pars[pvi["skewness"]];
+  for (size_t i=0,j=0; i<set->n_pops; j+=v[i],i++) {
+    double mean=pars[3*i+0];
+    double width=pow(10.0, pars[3*i+1]);
+    double skew=pars[3*i+2];
 
-    for (size_t i=0; i<n_stars; i++) {
-
-      double m_dat=dat.s_mass[i];
-      double asym=dat.c_68[i];
-      double scale=dat.d_68[i];
-      double m_par=pars[3+i];
+    for (size_t k=0; k<v[i]; k++) {
+      double m_dat=dat.s_mass[j+k];
+      double asym=dat.c_68[j+k];
+      double scale=dat.d_68[j+k];
+      double m_par=pars[3*set->n_pops+j+k];
       double wgt=pdf::asym_norm(m_dat-m_par, asym, scale) * 
-                 pdf::skewed_norm(m_par, mean, width, skew);
+                pdf::skewed_norm(m_par, mean, width, skew);
 
       if (wgt<=0.0) {
-        sout << "base::point(): Star " << dat.s_names[i] 
-             << " returned zero weight." << endl;
+        sout << "base::point(): Star " << dat.s_names[j+k] 
+              << " returned zero weight." << endl;
         // log_wgt=double(dat.ix_wgt_zero)-100.0;
         return dat.ix_wgt_zero;
       }
 
-      dat.wgt_star.set("wgt", i, wgt);
+      dat.wgt_star.set("wgt", j+k, wgt);
       log_wgt+=log(wgt);
-
     }
   }
 
@@ -126,49 +83,58 @@ int base::point(const ubvector &pars, std::ofstream &sout,
 
 }
 
+
 int base::deriv(const ubvector &pars, point_funct &pf, 
                 ubvector &grad, data &dat) {
-  
-  /*size_t n_params=pars.size();
-  if (grad.size()!=n_params) grad.resize(n_params);
 
-  double weights=0.0;
+  double log_wgt=0.0;
+  size_t np=pars.size();
+  int f_ret=pf(np, pars, log_wgt, dat);
+  if (f_ret!=0) return dat.ix_grad_failure;
 
-  for (size_t i=0; i<dat.n_stars; i++) {
-    weights+=dat.wgt_star.get("wgt", i);
-  }
+  vector<size_t> v={dat.n_lmxb, dat.n_hmxb, dat.n_nsns, dat.n_nswd};
 
-  vector<double> sum_m(dat.n_pops,0.0);
-  vector<double> sum_s(dat.n_pops,0.0);
-  vector<double> sum_a(dat.n_pops,0.0);
+  if (grad.size()!=np) grad.resize(np);
 
-  // Main loop over all (i,j)
-  for (size_t i=0; i<dat.n_pops; i++) {
-    
-    double mean=pars[pvi["mean"]];
-    double width=pow(10.0, pars[pvi["log10_std"]]);
-    double skew=pars[pvi["skewness"]];
+  for (size_t i=0,j=0; i<set->n_pops; j+=v[i],i++) {
+    double mean=pars[3*i+0];
+    double width=pow(10.0, pars[3*i+1]);
+    double skew=pars[3*i+2];
 
-    for (size_t j=0; j<dat.n_lmxb; j++) {
-      double m_dat=dat.s_mass[j];
-      double m_par=pars[dat.n_distp+j];
+    double sum_mean=0.0;
+    double sum_width=0.0;
+    double sum_skew=0.0;
+
+    for (size_t k=0; k<v[i]; k++) {
+      double m_dat=dat.s_mass[j+k];
+      double asym=dat.c_68[j+k];
+      double scale=dat.d_68[j+k];
+      double m_par=pars[3*set->n_pops+j+k];
+
       double expo=(m_par-mean)/width;
-      double ratio=pdf::s_norm(skew*expo)/pdf::c_norm(skew*expo);
-      double ddm_sn=(1.0/width)*(expo-skew*ratio);
-      double ddw_sn=(1.0/width)*((expo*expo-1.0)-skew*expo*ratio);
-      double dds_sn=expo*ratio;
-      double ddM_sn=(1.0/width)*(-expo+skew*ratio);
-      sum_m[i]+=ddm_sn;
-      sum_s[i]+=ddw_sn;
-      sum_a[i]+=dds_sn;
-      double w=dat.s_mass[i]-m_par;
-      double c=dat.c_68[i];
-      double d=dat.d_68[i];
-      double f_an=pdf::asym_norm(w,c,d);
-      double ddM_an=(-pdf::dan_dx(w,c,d))/f_an;
-      grad[i]=weights*(ddM_sn+ddM_an);
+      double ncdf=pdf::c_norm(skew*expo);
+      double npdf=pdf::s_norm(skew*expo);
+      double ratio=npdf/ncdf;
+
+      double d_mean=(1.0/width)*(expo-skew*ratio);
+      double d_width=(1.0/width)*((expo*expo-1.0)-skew*expo*ratio);
+      double d_skew=(expo*ratio);
+      double dm_sn=(1.0/width)*(-expo+skew*ratio);
+
+      sum_mean+=d_mean;
+      sum_width+=d_width;
+      sum_skew+=d_skew;
+
+      double f_an=pdf::asym_norm(m_dat-m_par, asym, scale);
+      double dm_an=(-pdf::dan_dx(m_dat-m_par, asym, scale))/f_an;
+
+      grad[3*set->n_pops+j+k]=-(dm_sn+dm_an);
     }
-  }*/
+
+    grad[3*i+0]=-sum_mean;
+    grad[3*i+1]=-(log(10.0)*width)*sum_width;
+    grad[3*i+2]=-sum_skew;
+  }
 
   return 0;
 }

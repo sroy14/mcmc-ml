@@ -54,6 +54,7 @@ namespace mc2ml {
     std::shared_ptr<settings> set;
     std::shared_ptr<data> dat;
     o2scl::vec_index pvi;
+    size_t n_params;
 
     virtual int set_method_mc(std::vector<std::string> &, bool);
     virtual int set_method_ml(std::vector<std::string> &, bool);

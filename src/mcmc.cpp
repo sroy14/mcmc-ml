@@ -114,14 +114,8 @@ int mcmc::mcmc_init() {
 
   // Add columns to table here
   
-  if (set->inc_lmxb) {
-    for (size_t i=0; i<dat->n_stars; i++) {
-      this->table->new_column("wgt_"+dat->s_names[i]);
-    }
-  } else {
-    for (size_t i=0; i<set->grid_size; i++) {
-      this->table->new_column("wgt_"+o2scl::itos(i));
-    }
+  for (size_t i=0; i<dat->n_stars; i++) {
+    this->table->new_column("wgt_"+dat->s_names[i]);
   }
 
   return 0;
@@ -173,17 +167,45 @@ int mcmc::set_method_ml(std::vector<std::string> &sv, bool itive_com) {
 } // set_method_ml()
 
 
+int mcmc::set_param_space(vector<string> &sv, bool itive_com) {
+
+  if (sv.size()<2) {
+    cerr << "Parameter space not specified." << endl;
+    return o2scl::exc_einval;
+  }
+
+  if (sv[1]=="S") {
+    set->n_pops=1;
+    n_params=3+dat->n_lmxb;
+  }
+  else if (sv[1]=="M") {
+    set->n_pops=2;
+    n_params=6+dat->n_lmxb+dat->n_hmxb;
+  }
+  else if (sv[1]=="L") {
+    set->n_pops=3;
+    n_params=9+dat->n_lmxb+dat->n_hmxb+dat->n_nsns;
+  }
+  else if (sv[1]=="XL") {
+    set->n_pops=4;
+    n_params=12+dat->n_lmxb+dat->n_hmxb+dat->n_nsns+dat->n_nswd;
+  }
+  else {
+    cerr << "Invalid parameter space: " << sv[1] << endl;
+    return o2scl::exc_einval;
+  }
+
+  return 0;
+
+} // set_param_space()
+
+
 int mcmc::initial_point_best(vector<string> &sv, bool itive_com) {
 
   if (sv.size()<2) {
     cerr << "Initial point file not specified." << endl;
-    return 1;
+    return o2scl::exc_einval;
   }
-
-  size_t n_pars;
-
-  if (set->inc_lmxb) n_pars=dat->n_stars+3;
-  else n_pars=3;
 
   string fname=sv[1];
   size_t pos=fname.find("<rank>");
@@ -192,7 +214,7 @@ int mcmc::initial_point_best(vector<string> &sv, bool itive_com) {
     fname.replace(pos, 6, o2scl::itos(mpi_rank));
   }
 
-  this->initial_points_file_best(fname, n_pars);
+  this->initial_points_file_best(fname, n_params);
 
   return 0;
 
@@ -203,13 +225,8 @@ int mcmc::initial_point_last(vector<string> &sv, bool itive_com) {
 
   if (sv.size()<2) {
     cerr << "Initial point file not specified." << endl;
-    return 1;
+    return o2scl::exc_einval;
   }
-
-  size_t n_pars;
-  
-  if (set->inc_lmxb) n_pars=dat->n_stars+3;
-  else n_pars=3;
 
   string fname=sv[1];
   size_t pos=fname.find("<rank>");
@@ -218,7 +235,7 @@ int mcmc::initial_point_last(vector<string> &sv, bool itive_com) {
     fname.replace(pos, 6, o2scl::itos(this->mpi_rank));
   }
 
-  this->initial_points_file_last(fname, n_pars);
+  this->initial_points_file_last(fname, n_params);
 
   return 0;
 
@@ -241,7 +258,7 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
 
   vector<double> low, high, init;
 
-  if (set->inc_lmxb) dat->load_data(set);
+  dat->load_data(set);
   dat->get_param_info(p_names, p_units, low, high, set);
   set_names_units(p_names, p_units, d_names, d_units);
 
@@ -253,7 +270,7 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
     this->initial_points.push_back(ip);
   }
 
-  for(size_t i=0; i<p_names.size(); i++) {
+  for(size_t i=0; i<n_params; i++) {
     pvi.append(p_names[i]);
   }
 
@@ -261,7 +278,7 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
     m_ptr[i]->pvi=pvi;
   }
 
-  size_t np=p_names.size();
+  size_t np=n_params;
   ubvector lo(low.size()), hi(high.size());
   vector_copy(low, lo);
   vector_copy(high, hi);
@@ -292,7 +309,7 @@ void mcmc::mcmc_setup_cli() {
   mcmc_para_cli::setup_cli(cl);
   set->setup_cli(cl);
 
-  static const int n_opt=6;
+  static const int n_opt=7;
 
   comm_option_s options[n_opt] = {
 
@@ -322,6 +339,11 @@ void mcmc::mcmc_setup_cli() {
        "('dnn'), gaussian process ('gp'), and multi-layer perceptron " +
        "regressor ('mlpr').",
       new comm_option_mfptr<mcmc>(this, &mcmc::set_method_ml),
+      cli::comm_option_both},
+    {'p', "param-space", "Set parameter space.", 1, 1, "<string>",
+      string("Specify the size of the parameter space for MCMC. ") +
+       "Choices are: 'S', 'M', 'L', 'XL'.",
+      new comm_option_mfptr<mcmc>(this, &mcmc::set_param_space),
       cli::comm_option_both},
     {0, "initial-point-last", "Set initial point file name.", 1, 1, "<string>",
       string("Provide the name(s) of file(s) to read the initial points. Use ") +

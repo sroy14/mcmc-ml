@@ -36,9 +36,8 @@ void data::get_param_info(vector<string> &names,
                           vector<double> &low,
                           vector<double> &high,
                           shared_ptr<settings> set) {
-  
-  if (set->param_space=="S" || set->param_space=="M" ||
-      set->param_space=="L" || set->param_space=="XL") { 
+
+  if (set->n_pops>=1) {
     // Include LMXBs
 
     names.push_back("mean_lmxb");
@@ -56,12 +55,6 @@ void data::get_param_info(vector<string> &names,
     low.push_back(-1.0);
     high.push_back(1.0);
 
-    for (int i=0; i<3; i++) {
-      units.push_back("Msun");
-      low.push_back(0.5);
-      high.push_back(2.5);
-    }
-
     // n_lmxb = 5
     for (size_t i=0; i<n_lmxb; i++) {
       names.push_back("M_"+s_names[i]);
@@ -71,9 +64,7 @@ void data::get_param_info(vector<string> &names,
     }
   }
 
-  if (set->param_space=="M" ||
-      set->param_space=="L" ||
-      set->param_space=="XL") { // Also include HMXBs
+  if (set->n_pops>=2) { // Also include HMXBs
 
     names.push_back("mean_hmxb");
     units.push_back("Msun");
@@ -99,7 +90,7 @@ void data::get_param_info(vector<string> &names,
     }
   }
 
-  if (set->param_space=="L" || set->param_space=="XL") {
+  if (set->n_pops>=3) {
     // Also include NS-NS
     names.push_back("mean_nsns");
     units.push_back("Msun");
@@ -126,7 +117,7 @@ void data::get_param_info(vector<string> &names,
     }
   }
 
-  if (set->param_space=="XL") { // Also include NS-WD
+  if (set->n_pops>=4) { // Also include NS-WD
 
     names.push_back("mean_nswd");
     units.push_back("Msun");
@@ -160,11 +151,8 @@ void data::get_param_info(vector<string> &names,
 
 void data::set_init_point(vector<double> &init,
                           shared_ptr<settings> set) {
-  
-  if (set->param_space=="S" ||
-      set->param_space=="M" ||
-      set->param_space=="L" ||
-      set->param_space=="XL") {
+
+  if (set->n_pops>=1) {
     init.push_back(1.4);
     init.push_back(-0.1);
     init.push_back(0.0);
@@ -173,9 +161,7 @@ void data::set_init_point(vector<double> &init,
     }
   }
 
-  if (set->param_space=="M" ||
-      set->param_space=="L" ||
-      set->param_space=="XL") {
+  if (set->n_pops>=2) {
     init.push_back(1.4);
     init.push_back(-0.1);
     init.push_back(0.0);
@@ -184,8 +170,7 @@ void data::set_init_point(vector<double> &init,
     }
   }
 
-  if (set->param_space=="L" ||
-      set->param_space=="XL") {
+  if (set->n_pops>=3) {
     init.push_back(1.4);
     init.push_back(-0.1);
     init.push_back(0.0);
@@ -195,7 +180,7 @@ void data::set_init_point(vector<double> &init,
     }
   }
 
-  if (set->param_space=="XL") {
+  if (set->n_pops>=4) {
     init.push_back(1.4);
     init.push_back(-0.1);
     init.push_back(0.0);
@@ -215,8 +200,7 @@ void data::load_data(std::shared_ptr<settings> set) {
   vector<double> lo_68, hi_68;
   solver s;
 
-  if (set->param_space=="S" || set->param_space=="M" ||
-      set->param_space=="L" || set->param_space=="XL") {
+  if (set->n_pops>=1) {
 
     s_names.push_back("CygX2");
     s_mass.push_back(1.71);
@@ -248,9 +232,7 @@ void data::load_data(std::shared_ptr<settings> set) {
     }
   }
 
-  if (set->param_space=="M" ||
-      set->param_space=="L" ||
-      set->param_space=="XL") {
+  if (set->n_pops>=2) {
 
     s_names.push_back("4U1700");
     s_mass.push_back(1.96); 
@@ -306,8 +288,7 @@ void data::load_data(std::shared_ptr<settings> set) {
     }
   }
 
-  if (set->param_space=="L" ||
-      set->param_space=="XL") {
+  if (set->n_pops>=3) {
 
     s_names.push_back("J0453p");
     s_mass.push_back(1.559);
@@ -429,7 +410,7 @@ void data::load_data(std::shared_ptr<settings> set) {
     }
   }
 
-  if (set->param_space=="XL") {
+  if (set->n_pops>=4) {
 
     s_names.push_back("J2045");
     s_mass.push_back(1.33);
@@ -600,6 +581,12 @@ void data::load_data(std::shared_ptr<settings> set) {
       d_68.push_back(d);
     }
   }
+
+  if (set->n_pops==1) n_stars=n_lmxb;
+  else if (set->n_pops==2) n_stars=n_lmxb+n_hmxb;
+  else if (set->n_pops==3) n_stars=n_lmxb+n_hmxb+n_nsns;
+  else if (set->n_pops==4) n_stars=n_lmxb+n_hmxb+n_nsns+n_nswd;
+
 }
 
 
