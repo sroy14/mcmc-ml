@@ -77,6 +77,7 @@ namespace mc2ml {
       d_68=dat.d_68;
       wgt_star=dat.wgt_star;
       wgt_grid=dat.wgt_grid;
+      n_stars=dat.n_stars;
     }
 
     data &operator=(const data &dat) {
@@ -89,6 +90,7 @@ namespace mc2ml {
         d_68=dat.d_68;
         wgt_star=dat.wgt_star;
         wgt_grid=dat.wgt_grid;
+        n_stars=dat.n_stars;
       }
       return *this;
     }

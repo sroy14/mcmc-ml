@@ -41,7 +41,7 @@ namespace mc2ml {
                             std::vector<double> &, data &)> fill_funct;
 
   typedef std::function<int(size_t, const ubvector &, point_funct &, 
-                            ubvector &, data &, bool &)> deriv_funct;
+                            ubvector &, data &)> deriv_funct;
   
   class base {
   

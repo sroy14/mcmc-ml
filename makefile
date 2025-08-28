@@ -115,16 +115,16 @@ help:
 
 run: $(TARGET) $(OUT_DIR)
 	./$(TARGET) -threads 1 \
-	-method ai -set prefix $(OUT_DIR)/ai -set n_walk 24 \
+	-method hmc -param-space S -set prefix $(OUT_DIR)/hmc -set n_walk 24 \
 	-set max_iters 10000 -set file_update_time 1 \
-	-set verbose 1 -set mcmc_verbose 2 -set inc_lmxb 1 \
+	-set verbose 1 -set mcmc_verbose 2  \
 	-mcmc
 
 run_mpi: $(TARGET_MPI) $(OUT_DIR)
 	mpirun -np $(NP) ./$(TARGET_MPI) -threads 1 \
-	-method ai -set prefix $(OUT_DIR)/ai -set n_walk 24 \
+	-method hmc -param-space S -set prefix $(OUT_DIR)/hmc -set n_walk 24 \
 	-set max_iters 10000 -set file_update_time 1 \
-	-set verbose 1 -set mcmc_verbose 2 -set inc_lmxb 1 \
+	-set verbose 1 -set mcmc_verbose 2  \
 	-mcmc
 
 # Print library-related tokens from flags

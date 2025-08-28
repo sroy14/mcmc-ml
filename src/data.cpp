@@ -39,7 +39,6 @@ void data::get_param_info(vector<string> &names,
 
   if (set->n_pops>=1) {
     // Include LMXBs
-
     names.push_back("mean_lmxb");
     units.push_back("Msun");
     low.push_back(0.5);
@@ -47,14 +46,69 @@ void data::get_param_info(vector<string> &names,
 
     names.push_back("log10std_lmxb");
     units.push_back("Msun");
-    low.push_back(0.0);
-    high.push_back(1.0);
+    low.push_back(-6.0);
+    high.push_back(0.0);
 
     names.push_back("skewness_lmxb");
     units.push_back("");
     low.push_back(-1.0);
     high.push_back(1.0);
+  }
 
+  if (set->n_pops>=2) { // Also include HMXBs
+    names.push_back("mean_hmxb");
+    units.push_back("Msun");
+    low.push_back(0.5);
+    high.push_back(2.5);
+
+    names.push_back("log10std_hmxb");
+    units.push_back("Msun");
+    low.push_back(-6.0);
+    low.push_back(0.0);
+
+    names.push_back("skewness_hmxb");
+    units.push_back("");
+    low.push_back(-1.0);
+    high.push_back(1.0);
+  }
+
+  if (set->n_pops>=3) { // Also include NS-NS
+    names.push_back("mean_nsns");
+    units.push_back("Msun");
+    low.push_back(0.5);
+    high.push_back(2.5);
+
+    names.push_back("log10std_nsns");
+    units.push_back("Msun");
+    low.push_back(-6.0);
+    low.push_back(0.0);
+
+    names.push_back("skewness_nsns");
+    units.push_back("");
+    low.push_back(-1.0);
+    high.push_back(1.0);
+  }
+
+  if (set->n_pops>=4) { // Also include NS-WD
+    names.push_back("mean_nswd");
+    units.push_back("Msun");
+    low.push_back(0.5);
+    high.push_back(2.5);
+
+    names.push_back("log10std_nswd");
+    units.push_back("Msun");
+    low.push_back(-6.0);
+    low.push_back(0.0);
+
+    names.push_back("skewness_nswd");
+    units.push_back("");
+    low.push_back(-1.0);
+    high.push_back(1.0);
+
+    
+  }
+
+  if (set->n_pops>=1) {
     // n_lmxb = 5
     for (size_t i=0; i<n_lmxb; i++) {
       names.push_back("M_"+s_names[i]);
@@ -64,23 +118,7 @@ void data::get_param_info(vector<string> &names,
     }
   }
 
-  if (set->n_pops>=2) { // Also include HMXBs
-
-    names.push_back("mean_hmxb");
-    units.push_back("Msun");
-    low.push_back(0.5);
-    high.push_back(2.5);
-
-    names.push_back("log10std_hmxb");
-    units.push_back("Msun");
-    low.push_back(0.0);
-    high.push_back(1.0);
-
-    names.push_back("skewness_hmxb");
-    units.push_back("");
-    low.push_back(-1.0);
-    high.push_back(1.0);
-
+  if (set->n_pops>=2) {
     // n_hmxb = 11
     for (size_t i=n_lmxb; i<n_lmxb+n_hmxb; i++) {
       names.push_back("M_"+s_names[i]);
@@ -91,22 +129,6 @@ void data::get_param_info(vector<string> &names,
   }
 
   if (set->n_pops>=3) {
-    // Also include NS-NS
-    names.push_back("mean_nsns");
-    units.push_back("Msun");
-    low.push_back(0.5);
-    high.push_back(2.5);
-
-    names.push_back("log10std_nsns");
-    units.push_back("Msun");
-    low.push_back(0.0);
-    high.push_back(1.0);
-
-    names.push_back("skewness_nsns");
-    units.push_back("");
-    low.push_back(-1.0);
-    high.push_back(1.0);
-
     // n_nsns = 22
     for (size_t i=n_lmxb+n_hmxb; 
          i<n_lmxb+n_hmxb+n_nsns; i++) {
@@ -117,23 +139,7 @@ void data::get_param_info(vector<string> &names,
     }
   }
 
-  if (set->n_pops>=4) { // Also include NS-WD
-
-    names.push_back("mean_nswd");
-    units.push_back("Msun");
-    low.push_back(0.5);
-    high.push_back(2.5);
-
-    names.push_back("log10std_nswd");
-    units.push_back("Msun");
-    low.push_back(0.0);
-    high.push_back(1.0);
-
-    names.push_back("skewness_nswd");
-    units.push_back("");
-    low.push_back(-1.0);
-    high.push_back(1.0);
-
+  if (set->n_pops>=4) {
     // n_nswd = 32
     for (size_t i=n_lmxb+n_hmxb+n_nsns; 
          i<n_lmxb+n_hmxb+n_nsns+n_nswd; i++) {
@@ -156,41 +162,51 @@ void data::set_init_point(vector<double> &init,
     init.push_back(1.4);
     init.push_back(-0.1);
     init.push_back(0.0);
-    for (size_t i=0; i<n_lmxb; i++) {
-      init.push_back(s_mass[i]);
-    }
   }
 
   if (set->n_pops>=2) {
     init.push_back(1.4);
     init.push_back(-0.1);
     init.push_back(0.0);
-    for (size_t i=n_lmxb; i<n_lmxb+n_hmxb; i++) {
-      init.push_back(s_mass[i]);
-    }
   }
 
   if (set->n_pops>=3) {
     init.push_back(1.4);
     init.push_back(-0.1);
     init.push_back(0.0);
-    for (size_t i=n_lmxb+n_hmxb; 
-         i<n_lmxb+n_hmxb+n_nsns; i++) {
-      init.push_back(s_mass[i]);
-    }
   }
 
   if (set->n_pops>=4) {
     init.push_back(1.4);
     init.push_back(-0.1);
     init.push_back(0.0);
-    for (size_t i=n_lmxb+n_hmxb+n_nsns; 
-         i<n_lmxb+n_hmxb+n_nsns+n_nswd; i++) {
+  }
+
+  if (set->n_pops>=1) {
+    for (size_t i=0; i<n_lmxb; i++) {
       init.push_back(s_mass[i]);
     }
   }
 
-  return;
+  if (set->n_pops>=2) {
+    for (size_t i=n_lmxb; i<n_lmxb+n_hmxb; i++) {
+      init.push_back(s_mass[i]);
+    }
+  }
+
+  if (set->n_pops>=3) {
+    for (size_t i=n_lmxb+n_hmxb; 
+      i<n_lmxb+n_hmxb+n_nsns; i++) {
+      init.push_back(s_mass[i]);
+    }
+  }
+
+  if (set->n_pops>=4) {
+    for (size_t i=n_lmxb+n_hmxb+n_nsns; 
+      i<n_lmxb+n_hmxb+n_nsns+n_nswd; i++) {
+      init.push_back(s_mass[i]);
+    }
+  }
 
 } // set_init_point()
 

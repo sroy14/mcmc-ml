@@ -24,6 +24,9 @@
 
 #include "mcmc.h"
 
+#include <iostream>
+#include <typeinfo>
+
 using namespace std;
 using namespace o2scl;
 using namespace o2scl_hdf;
@@ -138,8 +141,8 @@ int mcmc::set_method_mc(std::vector<std::string> &sv, bool itive_com) {
   mc_type=sv[1];
   m_ptr[0]->mc_type=sv[1];
 
-  if (mc_type=="ai") this->aff_inv=1;
-  else this->aff_inv=0;
+  /*if (mc_type=="ai") this->aff_inv=1;
+  else this->aff_inv=0;*/
 
   return 0;
 
@@ -168,6 +171,8 @@ int mcmc::set_method_ml(std::vector<std::string> &sv, bool itive_com) {
 
 
 int mcmc::set_param_space(vector<string> &sv, bool itive_com) {
+
+  cout << "mcmc::set_param_space()" << endl;
 
   if (sv.size()<2) {
     cerr << "Parameter space not specified." << endl;
@@ -242,6 +247,34 @@ int mcmc::initial_point_last(vector<string> &sv, bool itive_com) {
 } // initial_points_file_last()
 
 
+int mcmc::dump_params(std::vector<std::string>&, bool) {
+  std::cout << "Parameters registered (" << cl.par_list.size() << ")\n";
+  for (const auto &kv : cl.par_list) {
+    const char *ty = "unknown";
+    if (dynamic_cast<o2scl::cli::parameter_size_t*>(kv.second))   ty = "size_t";
+    else if (dynamic_cast<o2scl::cli::parameter_double*>(kv.second))  ty = "double";
+    else if (dynamic_cast<o2scl::cli::parameter_int*>(kv.second))     ty = "int";
+    else if (dynamic_cast<o2scl::cli::parameter_bool*>(kv.second))    ty = "bool";
+    else if (dynamic_cast<o2scl::cli::parameter_string*>(kv.second))  ty = "string";
+    std::cout << "  " << kv.first << " : " << ty << "\n";
+  }
+  return 0;
+}
+
+
+int mcmc::print_config(std::vector<std::string>&, bool) {
+  std::cout
+    << "CONFIG:\n"
+    << "  prefix=" << prefix << "\n"
+    << "  n_walk=" << n_walk << "\n"
+    << "  max_iters=" << max_iters << "\n"
+    << "  file_update_time=" << file_update_time << "\n"
+    << "  verbose=" << set->verbose << "\n"
+    << "  mcmc_verbose=" << this->verbose << "\n";
+  return 0;
+}
+
+
 int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
 
   if (mc_type.empty()) {
@@ -297,6 +330,52 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
   size_t sz=2*this->n_walk*this->n_threads;
   vector<data> dv(sz, *dat);
 
+  if (mc_type=="hmc") {
+
+#ifdef O2SCL_MPI
+    if (mpi_size>1 && mpi_rank>=1) {
+      int tag=0, buffer=0;
+      MPI_Recv(&buffer,1,MPI_INT,mpi_rank-1,
+         tag,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    }
+#endif
+
+    shared_ptr<mcmc_stepper_hmc<point_funct,data,ubvector>> hmc_stepper
+      (new mcmc_stepper_hmc<point_funct,data,ubvector>);
+    stepper=hmc_stepper;
+
+    hmc_stepper->allocate(n_threads, n_params);
+
+    hmc_stepper->auto_grad.resize(np);
+    for (size_t i=0; i<np; i++) {
+      hmc_stepper->auto_grad[i]=false;
+    }
+
+    hmc_stepper->hmc_step.resize(np);
+    for (size_t i=0; i<np; i++) {
+      hmc_stepper->hmc_step[i]=1.0e-2*(high[i]-low[i]);
+    }
+
+    hmc_stepper->traj_length=1;
+
+    vector<mc2ml::deriv_funct> gf(n_threads);
+    for (size_t i=0; i<n_threads; i++) {
+      gf[i]=bind(mem_fn<int(const ubvector &, point_funct &, ubvector &, 
+                            data &)>(&base::deriv), m_ptr[i], _2, _3, _4, _5);
+    }
+
+    hmc_stepper->set_gradients(gf);
+
+#ifdef O2SCL_MPI
+    if (mpi_size>1 && mpi_rank>=1) {
+      int tag=0, buffer=0;
+      MPI_Send(&buffer,1,MPI_INT,mpi_rank+1,
+         tag,MPI_COMM_WORLD);
+    }
+#endif
+
+  }
+
   this->mcmc_fill(np, lo, hi, pf, ff, dv);
 
   return 0;
@@ -309,7 +388,7 @@ void mcmc::mcmc_setup_cli() {
   mcmc_para_cli::setup_cli(cl);
   set->setup_cli(cl);
 
-  static const int n_opt=7;
+  static const int n_opt=9;
 
   comm_option_s options[n_opt] = {
 
@@ -357,6 +436,13 @@ void mcmc::mcmc_setup_cli() {
        "the file name as, e.g., 'fname_<rank>'. ",
       new comm_option_mfptr<mcmc>(this,&mcmc::initial_point_best),
       cli::comm_option_both},
+    {0, "dump-params", "List all -set parameter names and types.", 0, 0, "", "",
+      new comm_option_mfptr<mcmc>(this, &mcmc::dump_params),
+      cli::comm_option_both},
+    {0, "print-config", "Show current run configuration.", 0, 0, "", "",
+      new comm_option_mfptr<mcmc>(this, &mcmc::print_config),
+      cli::comm_option_both},
+
   };
 
   cl.set_comm_option_vec(n_opt, options);
