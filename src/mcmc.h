@@ -66,12 +66,13 @@ namespace mc2ml {
     virtual int initial_point_last(std::vector<std::string> &, bool);
     virtual int initial_point_best(std::vector<std::string> &, bool);
 
-    virtual int dump_params(std::vector<std::string> &, bool);
-    virtual int print_config(std::vector<std::string> &, bool);
-
   public:
 
+#ifdef BAMR_READLINE
+    o2scl::cli_readline cl;
+#else
     o2scl::cli cl;
+#endif
 
     mcmc();
 

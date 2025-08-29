@@ -22,6 +22,10 @@
   -------------------------------------------------------------------
 */
 
+#ifdef BAMR_MPI
+#include <mpi.h>
+#endif
+
 #include "mcmc.h"
 #include "base.h"
 

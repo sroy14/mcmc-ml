@@ -138,11 +138,17 @@ int mcmc::set_method_mc(std::vector<std::string> &sv, bool itive_com) {
     return 0;
   }
 
+  if (mc_type!="rw" && mc_type!="ai" && 
+      mc_type!="hmc" && mc_type!="kde") {
+    cerr << "Invalid MCMC method: " << sv[1] << endl;
+    return o2scl::exc_einval;
+  }
+
   mc_type=sv[1];
   m_ptr[0]->mc_type=sv[1];
 
-  /*if (mc_type=="ai") this->aff_inv=1;
-  else this->aff_inv=0;*/
+  if (mc_type=="ai") this->aff_inv=1;
+  else this->aff_inv=0;
 
   return 0;
 
@@ -247,34 +253,6 @@ int mcmc::initial_point_last(vector<string> &sv, bool itive_com) {
 } // initial_points_file_last()
 
 
-int mcmc::dump_params(std::vector<std::string>&, bool) {
-  std::cout << "Parameters registered (" << cl.par_list.size() << ")\n";
-  for (const auto &kv : cl.par_list) {
-    const char *ty = "unknown";
-    if (dynamic_cast<o2scl::cli::parameter_size_t*>(kv.second))   ty = "size_t";
-    else if (dynamic_cast<o2scl::cli::parameter_double*>(kv.second))  ty = "double";
-    else if (dynamic_cast<o2scl::cli::parameter_int*>(kv.second))     ty = "int";
-    else if (dynamic_cast<o2scl::cli::parameter_bool*>(kv.second))    ty = "bool";
-    else if (dynamic_cast<o2scl::cli::parameter_string*>(kv.second))  ty = "string";
-    std::cout << "  " << kv.first << " : " << ty << "\n";
-  }
-  return 0;
-}
-
-
-int mcmc::print_config(std::vector<std::string>&, bool) {
-  std::cout
-    << "CONFIG:\n"
-    << "  prefix=" << prefix << "\n"
-    << "  n_walk=" << n_walk << "\n"
-    << "  max_iters=" << max_iters << "\n"
-    << "  file_update_time=" << file_update_time << "\n"
-    << "  verbose=" << set->verbose << "\n"
-    << "  mcmc_verbose=" << this->verbose << "\n";
-  return 0;
-}
-
-
 int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
 
   if (mc_type.empty()) {
@@ -333,8 +311,10 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
   if (mc_type=="hmc") {
 
 #ifdef O2SCL_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
+    int tag=0, buffer=0;
     if (mpi_size>1 && mpi_rank>=1) {
-      int tag=0, buffer=0;
       MPI_Recv(&buffer,1,MPI_INT,mpi_rank-1,
          tag,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
     }
@@ -356,7 +336,7 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
       hmc_stepper->hmc_step[i]=1.0e-2*(high[i]-low[i]);
     }
 
-    hmc_stepper->traj_length=1;
+    hmc_stepper->traj_length=100;
 
     vector<mc2ml::deriv_funct> gf(n_threads);
     for (size_t i=0; i<n_threads; i++) {
@@ -367,8 +347,7 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
     hmc_stepper->set_gradients(gf);
 
 #ifdef O2SCL_MPI
-    if (mpi_size>1 && mpi_rank>=1) {
-      int tag=0, buffer=0;
+    if (mpi_size>1 && mpi_rank<mpi_size-1) {
       MPI_Send(&buffer,1,MPI_INT,mpi_rank+1,
          tag,MPI_COMM_WORLD);
     }
@@ -388,7 +367,7 @@ void mcmc::mcmc_setup_cli() {
   mcmc_para_cli::setup_cli(cl);
   set->setup_cli(cl);
 
-  static const int n_opt=9;
+  static const int n_opt=7;
 
   comm_option_s options[n_opt] = {
 
@@ -435,12 +414,6 @@ void mcmc::mcmc_setup_cli() {
        "this for restarting MCMC run using best points. If using MPI, format " +
        "the file name as, e.g., 'fname_<rank>'. ",
       new comm_option_mfptr<mcmc>(this,&mcmc::initial_point_best),
-      cli::comm_option_both},
-    {0, "dump-params", "List all -set parameter names and types.", 0, 0, "", "",
-      new comm_option_mfptr<mcmc>(this, &mcmc::dump_params),
-      cli::comm_option_both},
-    {0, "print-config", "Show current run configuration.", 0, 0, "", "",
-      new comm_option_mfptr<mcmc>(this, &mcmc::print_config),
       cli::comm_option_both},
 
   };

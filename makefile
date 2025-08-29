@@ -113,19 +113,33 @@ help:
 	@echo "  info            (print -L/-l entries in flags)"
 	@echo "  clean           (remove build/ and executables)"
 
-run: $(TARGET) $(OUT_DIR)
+ai_nompi: $(TARGET) $(OUT_DIR)
 	./$(TARGET) -threads 1 \
-	-method hmc -param-space S -set prefix $(OUT_DIR)/hmc -set n_walk 24 \
-	-set max_iters 10000 -set file_update_time 1 \
+	-method ai -param-space S -set prefix $(OUT_DIR)/ai \
+	-set n_walk 24 -set max_iters 10000 -set file_update_time 1 \
 	-set verbose 1 -set mcmc_verbose 2  \
-	-mcmc
+	-mcmc > $(OUT_DIR)/ai.log 2>&1
 
-run_mpi: $(TARGET_MPI) $(OUT_DIR)
+ai_mpi: $(TARGET_MPI) $(OUT_DIR)
 	mpirun -np $(NP) ./$(TARGET_MPI) -threads 1 \
-	-method hmc -param-space S -set prefix $(OUT_DIR)/hmc -set n_walk 24 \
+	-method ai -param-space S -set prefix $(OUT_DIR)/ai \
+	-set n_walk 24 -set max_iters 10000 -set file_update_time 1 \
+	-set verbose 1 -set mcmc_verbose 2  \
+	-mcmc > $(OUT_DIR)/ai.log 2>&1
+
+hmc_nompi: $(TARGET) $(OUT_DIR)
+	./$(TARGET) -threads 1 \
+	-method hmc -param-space S -set prefix $(OUT_DIR)/hmc \
 	-set max_iters 10000 -set file_update_time 1 \
 	-set verbose 1 -set mcmc_verbose 2  \
-	-mcmc
+	-mcmc > $(OUT_DIR)/hmc.log 2>&1
+
+hmc_mpi: $(TARGET_MPI) $(OUT_DIR)
+	mpirun -np $(NP) ./$(TARGET_MPI) -threads 1 \
+	-method hmc -param-space S -set prefix $(OUT_DIR)/hmc \
+	-set max_iters 10000 -set file_update_time 1 \
+	-set verbose 1 -set mcmc_verbose 2  \
+	-mcmc > $(OUT_DIR)/hmc.log 2>&1
 
 # Print library-related tokens from flags
 info:

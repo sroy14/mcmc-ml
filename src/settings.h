@@ -46,7 +46,6 @@ namespace mc2ml {
     o2scl::cli::parameter_size_t p_grid_size;
     o2scl::cli::parameter_int p_verbose;
     o2scl::cli::parameter_bool p_debug;
-    // o2scl::cli::parameter_bool p_couple_threads;
     o2scl::cli::parameter_double p_m_low;
     o2scl::cli::parameter_double p_m_high;
     o2scl::cli::parameter_string p_data_dir;
@@ -55,7 +54,6 @@ namespace mc2ml {
     size_t n_pops;
     int verbose;
     bool debug;
-    // bool couple_threads;
     double m_low;
     double m_high;
     std::string data_dir;
@@ -84,15 +82,6 @@ namespace mc2ml {
       p_data_dir.str=&data_dir;
       p_data_dir.help="Directory for input data files (default 'data').";
       cl.par_list.insert(std::make_pair("data_dir",&p_data_dir));
-
-      /*p_param_space.str=&param_space;
-      p_param_space.help="Parameter space (default 'S').";
-      cl.par_list.insert(std::make_pair("param_space",&p_param_space));*/
-
-      /*p_couple_threads.b=&couple_threads;
-      p_couple_threads.help=std::string("If true, share walkers among ")
-        + "threads (default false).";
-      cl.par_list.insert(std::make_pair("couple_threads",&p_couple_threads));*/
 
       return;
     }
