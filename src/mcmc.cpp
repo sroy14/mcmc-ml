@@ -334,7 +334,7 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
       hmc_stepper->hmc_step[i]=1.0e-1*(high[i]-low[i]);
     }
 
-    hmc_stepper->traj_length=1;
+    hmc_stepper->traj_length=10;
 
     vector<mc2ml::deriv_funct> gf(n_threads);
     for (size_t i=0; i<n_threads; i++) {

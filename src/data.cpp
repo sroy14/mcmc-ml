@@ -64,7 +64,7 @@ void data::get_param_info(vector<string> &names,
     names.push_back("log10std_hmxb");
     units.push_back("Msun");
     low.push_back(-6.0);
-    low.push_back(0.0);
+    high.push_back(0.0);
 
     names.push_back("skewness_hmxb");
     units.push_back("");
@@ -81,7 +81,7 @@ void data::get_param_info(vector<string> &names,
     names.push_back("log10std_nsns");
     units.push_back("Msun");
     low.push_back(-6.0);
-    low.push_back(0.0);
+    high.push_back(0.0);
 
     names.push_back("skewness_nsns");
     units.push_back("");
@@ -98,7 +98,7 @@ void data::get_param_info(vector<string> &names,
     names.push_back("log10std_nswd");
     units.push_back("Msun");
     low.push_back(-6.0);
-    low.push_back(0.0);
+    high.push_back(0.0);
 
     names.push_back("skewness_nswd");
     units.push_back("");

@@ -104,7 +104,7 @@ $(OBJ_DIR)/%.mpi.o: $(SRC_DIR)/%.cpp
 # ----- Convenience ----------------------------------------------
 NP = 8
 NSTEPS = 1000000
-NTHREADS = 8
+NTHREADS = 1
 NWALKS = 1
 PSPACE = S
 FUPDATE = 60
