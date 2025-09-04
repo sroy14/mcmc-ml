@@ -103,6 +103,11 @@ $(OBJ_DIR)/%.mpi.o: $(SRC_DIR)/%.cpp
 
 # ----- Convenience ----------------------------------------------
 NP = 8
+NSTEPS = 1000000
+NTHREADS = 8
+NWALKS = 1
+PSPACE = S
+FUPDATE = 60
 
 help:
 	@echo "Targets:"
@@ -114,31 +119,50 @@ help:
 	@echo "  clean           (remove build/ and executables)"
 
 ai_nompi: $(TARGET) $(OUT_DIR)
-	./$(TARGET) -threads 1 \
-	-method ai -param-space S -set prefix $(OUT_DIR)/ai \
-	-set n_walk 24 -set max_iters 10000 -set file_update_time 1 \
-	-set verbose 1 -set mcmc_verbose 2  \
-	-mcmc > $(OUT_DIR)/ai.log 2>&1
+	./$(TARGET) -threads $(NTHREADS) -set couple_threads 1 \
+	-method ai -param-space $(PSPACE) -set prefix $(OUT_DIR)/ai \
+	-set n_walk $(NWALKS) -set max_iters $(NSTEPS) \
+	-set file_update_time $(FUPDATE) \
+	-set verbose 1 -set mcmc_verbose 2 \
+	-mcmc 
+#> $(OUT_DIR)/ai.log 2>&1
 
 ai_mpi: $(TARGET_MPI) $(OUT_DIR)
-	mpirun -np $(NP) ./$(TARGET_MPI) -threads 1 \
-	-method ai -param-space S -set prefix $(OUT_DIR)/ai \
-	-set n_walk 24 -set max_iters 10000 -set file_update_time 1 \
-	-set verbose 1 -set mcmc_verbose 2  \
+	mpirun -np $(NP) ./$(TARGET_MPI) -threads $(NTHREADS) \
+	-method ai -param-space $(PSPACE) -set prefix $(OUT_DIR)/ai \
+	-set n_walk $(NWALKS) -set max_iters $(NSTEPS) \
+	-set file_update_time $(FUPDATE) \
+	-set verbose 1 -set mcmc_verbose 2 \
 	-mcmc > $(OUT_DIR)/ai.log 2>&1
 
+rw_nompi: $(TARGET) $(OUT_DIR)
+	./$(TARGET) -threads $(NTHREADS) \
+	-method rw -param-space $(PSPACE) -set prefix $(OUT_DIR)/rw \
+	-set max_iters $(NSTEPS) -set file_update_time $(FUPDATE) \
+	-set verbose 1 -set mcmc_verbose 2 \
+	-mcmc
+# > $(OUT_DIR)/rw.log 2>&1
+
+rw_mpi: $(TARGET_MPI) $(OUT_DIR)
+	mpirun -np $(NP) ./$(TARGET_MPI) -threads $(NTHREADS) \
+	-method rw -param-space $(PSPACE) -set prefix $(OUT_DIR)/rw \
+	-set max_iters $(NSTEPS) -set file_update_time $(FUPDATE) \
+	-set verbose 1 -set mcmc_verbose 2 \
+	-mcmc > $(OUT_DIR)/rw.log 2>&1
+
 hmc_nompi: $(TARGET) $(OUT_DIR)
-	./$(TARGET) -threads 1 \
-	-method hmc -param-space S -set prefix $(OUT_DIR)/hmc \
-	-set max_iters 10000 -set file_update_time 1 \
-	-set verbose 1 -set mcmc_verbose 2  \
-	-mcmc > $(OUT_DIR)/hmc.log 2>&1
+	./$(TARGET) -threads $(NTHREADS) \
+	-method hmc -param-space $(PSPACE) -set prefix $(OUT_DIR)/hmc \
+	-set max_iters $(NSTEPS) -set file_update_time $(FUPDATE) \
+	-set verbose 1 -set mcmc_verbose 2 \
+	-mcmc
+#> $(OUT_DIR)/hmc.log 2>&1
 
 hmc_mpi: $(TARGET_MPI) $(OUT_DIR)
-	mpirun -np $(NP) ./$(TARGET_MPI) -threads 1 \
-	-method hmc -param-space S -set prefix $(OUT_DIR)/hmc \
-	-set max_iters 10000 -set file_update_time 1 \
-	-set verbose 1 -set mcmc_verbose 2  \
+	mpirun -np $(NP) ./$(TARGET_MPI) -threads $(NTHREADS) \
+	-method hmc -param-space $(PSPACE) -set prefix $(OUT_DIR)/hmc \
+	-set max_iters $(NSTEPS) -set file_update_time $(FUPDATE) \
+	-set verbose 1 -set mcmc_verbose 2 \
 	-mcmc > $(OUT_DIR)/hmc.log 2>&1
 
 # Print library-related tokens from flags

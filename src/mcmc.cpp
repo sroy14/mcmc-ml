@@ -138,8 +138,8 @@ int mcmc::set_method_mc(std::vector<std::string> &sv, bool itive_com) {
     return 0;
   }
 
-  if (mc_type!="rw" && mc_type!="ai" && 
-      mc_type!="hmc" && mc_type!="kde") {
+  if (sv[1]!="rw"  && sv[1]!="ai" && 
+      sv[1]!="hmc" && sv[1]!="kde") {
     cerr << "Invalid MCMC method: " << sv[1] << endl;
     return o2scl::exc_einval;
   }
@@ -177,8 +177,6 @@ int mcmc::set_method_ml(std::vector<std::string> &sv, bool itive_com) {
 
 
 int mcmc::set_param_space(vector<string> &sv, bool itive_com) {
-
-  cout << "mcmc::set_param_space()" << endl;
 
   if (sv.size()<2) {
     cerr << "Parameter space not specified." << endl;
@@ -333,10 +331,10 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
 
     hmc_stepper->hmc_step.resize(np);
     for (size_t i=0; i<np; i++) {
-      hmc_stepper->hmc_step[i]=1.0e-2*(high[i]-low[i]);
+      hmc_stepper->hmc_step[i]=1.0e-1*(high[i]-low[i]);
     }
 
-    hmc_stepper->traj_length=100;
+    hmc_stepper->traj_length=1;
 
     vector<mc2ml::deriv_funct> gf(n_threads);
     for (size_t i=0; i<n_threads; i++) {
@@ -345,6 +343,8 @@ int mcmc::mcmc_func(vector<string> &sv, bool itive_com) {
     }
 
     hmc_stepper->set_gradients(gf);
+
+    hmc_stepper->debug_hmc=false;
 
 #ifdef O2SCL_MPI
     if (mpi_size>1 && mpi_rank<mpi_size-1) {

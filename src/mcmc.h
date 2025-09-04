@@ -68,11 +68,7 @@ namespace mc2ml {
 
   public:
 
-#ifdef BAMR_READLINE
-    o2scl::cli_readline cl;
-#else
     o2scl::cli cl;
-#endif
 
     mcmc();
 
