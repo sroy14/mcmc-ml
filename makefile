@@ -1,80 +1,224 @@
+#  -------------------------------------------------------------------
+#  
+#  Copyright (C) 2012-2025, Mahmudul Hasan Anik, Satyajit Roy, and 
+#  Andrew W. Steiner
+#  
+#  This file is part of mcmc-ml.
+#
+#  Mcmc-ml is free software; you can redistribute it and/or modify it 
+#  under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Mcmc-ml is distributed in the hope that it will be useful, but 
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with mcmc-ml. If not, see <http://www.gnu.org/licenses/>.
+#
+#  -------------------------------------------------------------------
+
+# ---------------------------------------------------------------
+# mc2ml Makefile (src -> build)
+# Build one at a time: mc2ml (non-MPI) | mc2ml_mpi (MPI)
+# ---------------------------------------------------------------
+
+# Default C++ compilers
+CXX = g++
+CXX_MPI = mpic++
+
+# C++ Standard
+STD = -std=c++20
+
+# Warning flags
+WARN = -Wall -Wno-unused -Wshadow -Wformat=2 -Woverloaded-virtual
+
+# Optimization flags
+OPT_FLAGS = -O3 -DNDEBUG -pipe -MMD -MP
+
+# OpenMP flags
+OMP_FLAGS = -fopenmp -DO2SCL_OPENMP
+
+# MPI flags
+MPI_FLAGS = -DO2SCL_MPI
+
+# HDF5 compression & header
+HDF_FLAGS = -DO2SCL_HDF5_COMP -DO2SCL_PLAIN_HDF5_HEADER
+
+# Python includes and libraries
+PY_INC = -I/usr/include/python3.13 \
+	-I/usr/lib/python3.13/site-packages/numpy/_core/include
+PY_LIB = -L/usr/lib -ldl -lm
+
+# Compiler flags
+CFLAGS = $(OMP_FLAGS) $(HDF_FLAGS) $(PY_INC)
+CFLAGS_MPI = $(CFLAGS) $(MPI_FLAGS)
+CXXFLAGS = $(STD) $(OPT_FLAGS) $(WARN)
+
+# Library flags
+LIB_FLAGS = -lo2scl -lhdf5 -lgsl -lreadline -lpython3.13
+LDFLAGS = -fopenmp $(PY_LIB) $(LIB_FLAGS)
+
+# Layout
+SRC_DIR = src
+OBJ_DIR = build
+OUT_DIR = out
+
+# Sources
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+
+# Objects & deps (single build dir; MPI uses .mpi.o/.mpi.d)
+OBJS      = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
+OBJS_MPI  = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.mpi.o,$(SRCS))
+DEPS      = $(OBJS:.o=.d)
+DEPS_MPI  = $(OBJS_MPI:.o=.d)   # -> .mpi.d
+
+# Executables
+TARGET     = mc2ml
+TARGET_MPI = mc2ml_mpi
+
+# Default
+all: help
+
+$(OUT_DIR):
+	@mkdir -p $(OUT_DIR)
+
+# ----- Non-MPI build ---------------------------------------------
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(CFLAGS) -c $< -o $@
+
+# ----- MPI build -------------------------------------------------
+$(TARGET_MPI): $(OBJS_MPI)
+	$(CXX_MPI) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(OBJ_DIR)/%.mpi.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX_MPI) $(CXXFLAGS) $(CFLAGS_MPI) -c $< -o $@
+
+# ----- Convenience ----------------------------------------------
+NP = 8
+NSTEPS = 1000000
+NTHREADS = 1
+NWALKS = 1
+PSPACE = S
+FUPDATE = 60
+
 help:
-	@echo "Makefile targets:"
-	@echo "─────────────────────────────────────────────────────────"
-	@echo "ex_mcmc:          later."
-	@echo "ex_mcmc_kde:      later."
-	@echo "ex_mcmc_new:      later."
-	@echo "ex_mcmc_nn:       later."
+	@echo "Targets:"
+	@echo "  $(TARGET)       (non-MPI)"
+	@echo "  $(TARGET_MPI)   (MPI)"
+	@echo "  run             (./$(TARGET))"
+	@echo "  run_MPI         (mpirun -np \$$NP ./$(TARGET_MPI))"
+	@echo "  info            (print -L/-l entries in flags)"
+	@echo "  clean           (remove build/ and executables)"
 
-# ----------------------------------------------------------------
-# Various user-specific settings
-# ----------------------------------------------------------------
-# LIBS is the list of libraries
-# LCXX is the local C++ compiler
-# LCFLAGS are the local C++ compiler flags
+ai_nompi: $(TARGET) $(OUT_DIR)
+	./$(TARGET) -threads $(NTHREADS) -set couple_threads 1 \
+	-method ai -param-space $(PSPACE) -set prefix $(OUT_DIR)/ai \
+	-set n_walk $(NWALKS) -set max_iters $(NSTEPS) \
+	-set file_update_time $(FUPDATE) \
+	-set verbose 1 -set mcmc_verbose 2 \
+	-mcmc 
+#> $(OUT_DIR)/ai.log 2>&1
 
-# Default settings
-# LCXX = $(CXX)
-# LMPI_CXX = $(MPI_CXX)
-# LIBS = -lo2scl -lhdf5 -lgsl -lreadline $(LDFLAGS) 
-# LMPI_CFLAGS = -O3 -DO2SCL_MPI -fopenmp $(CFLAGS) $(MPI_CFLAGS)
-# LCFLAGS = -O3 -std=c++11 -DNO_MPI -fopenmp $(CFLAGS)
+ai_mpi: $(TARGET_MPI) $(OUT_DIR)
+	mpirun -np $(NP) ./$(TARGET_MPI) -threads $(NTHREADS) \
+	-method ai -param-space $(PSPACE) -set prefix $(OUT_DIR)/ai \
+	-set n_walk $(NWALKS) -set max_iters $(NSTEPS) \
+	-set file_update_time $(FUPDATE) \
+	-set verbose 1 -set mcmc_verbose 2 \
+	-mcmc > $(OUT_DIR)/ai.log 2>&1
 
-# ----------------------------------------------------------------
-# UTK-specific settings
-# ----------------------------------------------------------------
+rw_nompi: $(TARGET) $(OUT_DIR)
+	./$(TARGET) -threads $(NTHREADS) \
+	-method rw -param-space $(PSPACE) -set prefix $(OUT_DIR)/rw \
+	-set max_iters $(NSTEPS) -set file_update_time $(FUPDATE) \
+	-set verbose 1 -set mcmc_verbose 2 \
+	-mcmc
+# > $(OUT_DIR)/rw.log 2>&1
 
-ifdef UTKNA_MAKEFILE
+rw_mpi: $(TARGET_MPI) $(OUT_DIR)
+	mpirun -np $(NP) ./$(TARGET_MPI) -threads $(NTHREADS) \
+	-method rw -param-space $(PSPACE) -set prefix $(OUT_DIR)/rw \
+	-set max_iters $(NSTEPS) -set file_update_time $(FUPDATE) \
+	-set verbose 1 -set mcmc_verbose 2 \
+	-mcmc > $(OUT_DIR)/rw.log 2>&1
 
-include $(UTKNA_MAKEFILE)
+hmc_nompi: $(TARGET) $(OUT_DIR)
+	./$(TARGET) -threads $(NTHREADS) \
+	-method hmc -param-space $(PSPACE) -set prefix $(OUT_DIR)/hmc \
+	-set max_iters $(NSTEPS) -set file_update_time $(FUPDATE) \
+	-set verbose 1 -set mcmc_verbose 2 \
+	-mcmc
+#> $(OUT_DIR)/hmc.log 2>&1
 
-# UTK configuration
+hmc_mpi: $(TARGET_MPI) $(OUT_DIR)
+	mpirun -np $(NP) ./$(TARGET_MPI) -threads $(NTHREADS) \
+	-method hmc -param-space $(PSPACE) -set prefix $(OUT_DIR)/hmc \
+	-set max_iters $(NSTEPS) -set file_update_time $(FUPDATE) \
+	-set verbose 1 -set mcmc_verbose 2 \
+	-mcmc > $(OUT_DIR)/hmc.log 2>&1
 
-LIBS = $(UTKNA_O2SCL_LIBS)
-INCS = $(UTKNA_O2SCL_INCS)
-LCXX = $(UTKNA_CXX)
-LMPI_CXX = $(UTKNA_MPI_CXX)
-LCFLAGS = $(UTKNA_CFLAGS) $(INCS)
-LMPI_CFLAGS = $(UTKNA_MPI_CFLAGS) $(UTKNA_OPENMP_FLAGS) $(INCS)
+# Print library-related tokens from flags
+info:
+	@printf "`tput bold`# Default C++ compilers\n`tput sgr0`"
+	@echo "CXX = $(CXX)"
+	@echo "CXX_MPI = $(CXX_MPI)"
+	@echo
 
-endif
+	@printf "`tput bold`# C++ Standard\n`tput sgr0`"
+	@echo "STD = $(STD)"
+	@echo
 
-# ----------------------------------------------------------------
-# Main
-# ----------------------------------------------------------------
-# Object files - openmp no mpi
-# ----------------------------------------------------------------
-ex_mcmc.o: ex_mcmc.cpp  
-	$(LCXX) $(LCFLAGS) -o ex_mcmc.o -c ex_mcmc.cpp 
+	@printf "`tput bold`# Warning flags\n`tput sgr0`"
+	@echo "WARN = $(WARN)"
+	@echo
 
-ex_mcmc_kde.o: ex_mcmc_kde.cpp  
-	$(LCXX) $(LCFLAGS) -o ex_mcmc_kde.o -c ex_mcmc_kde.cpp 
+	@printf "`tput bold`# Optimization flags\n`tput sgr0`"
+	@echo "OPT_FLAGS = $(OPT_FLAGS)"
+	@echo
 
-ex_mcmc_new.o: ex_mcmc_new.cpp  
-	$(LCXX) $(LCFLAGS) -o ex_mcmc_new.o -c ex_mcmc_new.cpp 
+	@printf "`tput bold`# OpenMP/MPI flags\n`tput sgr0`"
+	@echo "OMP_FLAGS = $(OMP_FLAGS)"
+	@echo "MPI_FLAGS = $(MPI_FLAGS)"
+	@echo
 
-ex_mcmc_nn.o: ex_mcmc_nn.cpp  
-	$(LCXX) $(LCFLAGS) -o ex_mcmc_nn.o -c ex_mcmc_nn.cpp 
+	@printf "`tput bold`# HDF5 compression & header flags\n`tput sgr0`"
+	@echo "HDF_FLAGS = $(HDF_FLAGS)"
+	@echo
 
-# ----------------------------------------------------------------
-# Executables - openmp no mpi
-# ----------------------------------------------------------------
+	@printf "`tput bold`# Python includes and libraries\n`tput sgr0`"
+	@echo "PY_INC = $(PY_INC)"
+	@echo "PY_LIB = $(PY_LIB)"
+	@echo
 
-ex_mcmc: ex_mcmc.o 
-	$(LCXX) $(LCFLAGS) -o ex_mcmc ex_mcmc.o $(LIBS)
+	@printf "`tput bold`# Compiler flags\n`tput sgr0`"
+	@echo "CXXFLAGS = $(STD) $(OPT_FLAGS) $(WARN)"
+	@echo "	   $(OMP_FLAGS) $(HDF_FLAGS) $(MPI_FLAGS)"
+	@echo "           $(PY_INC)"
+	@echo
 
-ex_mcmc_kde: ex_mcmc_kde.o 
-	$(LCXX) $(LCFLAGS) -o ex_mcmc_kde ex_mcmc_kde.o $(LIBS)
+	@printf "`tput bold`# Library flags\n`tput sgr0`"
+	@echo "LDFLAGS = -fopenmp $(PY_LIB) $(LIB_FLAGS)"
+	@echo
 
-ex_mcmc_new: ex_mcmc_new.o 
-	$(LCXX) $(LCFLAGS) -o ex_mcmc_new ex_mcmc_new.o $(LIBS)
+	@printf "`tput bold`# Directory layout\n`tput sgr0`"
+	@echo "SRC_DIR = $(SRC_DIR)/"
+	@echo "OBJ_DIR = $(OBJ_DIR)/"
+	@echo "OUT_DIR = $(OUT_DIR)/"
+	@echo
 
-ex_mcmc_nn: ex_mcmc_nn.o 
-	$(LCXX) $(LCFLAGS) -o ex_mcmc_nn ex_mcmc_nn.o $(LIBS)
+	@printf "`tput bold`# Executables (MPI/non-MPI)\n`tput sgr0`"
+	@echo "TARGETS = $(TARGET_MPI) $(TARGET)"
 
 clean:
-	rm -f *.o *_out *_scr ex_mcmc ex_mcmc_kde ex_mcmc_new ex_mcmc_nn 
+	rm -rf $(OBJ_DIR) $(TARGET) $(TARGET_MPI)
 
-# This optional file, makefile.user, is an alternate place to store
-# the user's makefile targets.
-#-include makefile.sroy
+# Auto deps
+-include $(DEPS) $(DEPS_MPI)

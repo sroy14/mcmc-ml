@@ -1,0 +1,10 @@
+.vscode
+src/.vscode
+build/*
+out/*
+*.o
+*~
+mc2ml
+mc2ml_nompi
+mc2ml_mpi
+test
